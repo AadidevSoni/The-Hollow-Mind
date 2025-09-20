@@ -2,21 +2,32 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    public int maxHP = 100;
-    int hp;
+    public HealthBar healthBar; // assign your UI slider here
+    public float maxHealth = 100f;
+    private float currentHealth;
 
-    void Awake() { hp = maxHP; }
-
-    public void TakeDamage(int amount)
+    private void Start()
     {
-        hp -= amount;
-        Debug.Log($"Player hit: -{amount}, hp={hp}");
-        if (hp <= 0) Die();
+        currentHealth = maxHealth;
+        if (healthBar != null)
+            healthBar.SetHealth(currentHealth); // initialize slider
     }
 
-    void Die()
+    public void TakeDamage(float amount)
     {
-        Debug.Log("Player died");
-        // play death, end game, etc.
+        currentHealth -= amount;
+        if (currentHealth < 0) currentHealth = 0;
+
+        if (healthBar != null)
+            healthBar.SetHealth(currentHealth); // update slider
+    }
+
+    public void Heal(float amount)
+    {
+        currentHealth += amount;
+        if (currentHealth > maxHealth) currentHealth = maxHealth;
+
+        if (healthBar != null)
+            healthBar.SetHealth(currentHealth); // update slider
     }
 }
