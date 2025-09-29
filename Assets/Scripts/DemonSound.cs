@@ -12,7 +12,7 @@ public class DemonSound : MonoBehaviour
     private AudioSource demonAudio;
     private bool wasCompletelySilent = true;
 
-    void Start()
+    void Awake()
     {
         demonAudio = GetComponent<AudioSource>();
         demonAudio.loop = true;
@@ -20,9 +20,20 @@ public class DemonSound : MonoBehaviour
         demonAudio.Play(); // Always play, adjust volume dynamically
     }
 
+    void OnEnable()
+    {
+        // Reset state whenever demon is enabled
+        wasCompletelySilent = true;
+        if (demonAudio != null)
+        {
+            demonAudio.time = 0f;
+            demonAudio.volume = 0f;
+        }
+    }
+
     void Update()
     {
-        if (player == null || musicManager == null) return;
+        if (player == null || musicManager == null || demonAudio == null) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
 
@@ -33,7 +44,6 @@ public class DemonSound : MonoBehaviour
             float t = 1f - Mathf.Clamp01(distance / detectionRange); // Closer = louder
             demonTargetVol = t;
 
-            // If previously completely silent, restart from beginning
             if (wasCompletelySilent)
             {
                 demonAudio.time = 0f;
@@ -44,15 +54,14 @@ public class DemonSound : MonoBehaviour
 
         demonAudio.volume = Mathf.Lerp(demonAudio.volume, demonTargetVol, Time.deltaTime * fadeSpeed);
 
-        // Track if demonAudio has faded out completely
         if (demonAudio.volume <= 0.01f)
         {
             wasCompletelySilent = true;
         }
 
-        // Fade currently active background music based on proximity
+        // Fade background music
         AudioSource activeMusic = musicManager.IsInDemonDimension ? musicManager.demonMusic : musicManager.realWorldMusic;
-        float targetVolume = distance <= detectionRange ? 0f : 1f; // 0 if close, 1 if far
+        float targetVolume = distance <= detectionRange ? 0f : 1f;
         activeMusic.volume = Mathf.Lerp(activeMusic.volume, targetVolume, Time.deltaTime * fadeSpeed);
     }
 }
