@@ -13,7 +13,7 @@ public class MainMenu : MonoBehaviour
     public void PlayGame()
     {
         if (!isFading)
-            StartCoroutine(FadeOutAudioAndScreen());
+            StartCoroutine(FadeOutAudioAndScreen(SceneManager.GetActiveScene().buildIndex + 1));
     }
 
     public void QuitGame()
@@ -21,12 +21,19 @@ public class MainMenu : MonoBehaviour
         Application.Quit();
     }
 
-    private IEnumerator FadeOutAudioAndScreen()
+    // 👉 Call this if you want to fade out and load the main menu scene
+    public void LoadMainMenu()
+    {
+        if (!isFading)
+            StartCoroutine(FadeOutAudioAndScreen("MainMenu")); // change "MainMenu" to your actual scene name
+    }
+
+    private IEnumerator FadeOutAudioAndScreen(int sceneIndex)
     {
         isFading = true;
 
         if (fadePanel != null)
-            fadePanel.blocksRaycasts = true; // Block input during fade
+            fadePanel.blocksRaycasts = true;
 
         float startVolume = audioSource != null ? audioSource.volume : 1f;
         float t = 0f;
@@ -36,24 +43,48 @@ public class MainMenu : MonoBehaviour
             t += Time.deltaTime;
             float lerp = t / fadeDuration;
 
-            // Fade panel
             if (fadePanel != null)
                 fadePanel.alpha = Mathf.Lerp(0f, 1f, lerp);
 
-            // Fade audio
             if (audioSource != null)
                 audioSource.volume = Mathf.Lerp(startVolume, 0f, lerp);
 
             yield return null;
         }
 
-        // Ensure fully black and audio silent
-        if (fadePanel != null)
-            fadePanel.alpha = 1f;
-        if (audioSource != null)
-            audioSource.volume = 0f;
+        if (fadePanel != null) fadePanel.alpha = 1f;
+        if (audioSource != null) audioSource.volume = 0f;
 
-        // Load next scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        SceneManager.LoadScene(sceneIndex);
+    }
+
+    private IEnumerator FadeOutAudioAndScreen(string sceneName)
+    {
+        isFading = true;
+
+        if (fadePanel != null)
+            fadePanel.blocksRaycasts = true;
+
+        float startVolume = audioSource != null ? audioSource.volume : 1f;
+        float t = 0f;
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            float lerp = t / fadeDuration;
+
+            if (fadePanel != null)
+                fadePanel.alpha = Mathf.Lerp(0f, 1f, lerp);
+
+            if (audioSource != null)
+                audioSource.volume = Mathf.Lerp(startVolume, 0f, lerp);
+
+            yield return null;
+        }
+
+        if (fadePanel != null) fadePanel.alpha = 1f;
+        if (audioSource != null) audioSource.volume = 0f;
+
+        SceneManager.LoadScene(sceneName);
     }
 }
