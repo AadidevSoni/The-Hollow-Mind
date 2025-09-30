@@ -1,18 +1,44 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
-public class SceneChanger : MonoBehaviour
+public class SceneFader : MonoBehaviour
 {
-    public float changeTime;
+    public CanvasGroup fadePanel;     // Black panel covering the screen
+    public float fadeDuration = 1f;   // Seconds to fade
     public string sceneName;
-    private void Update()
+    public float changeTime;
+    public float fKeyDelay;
+
+    void Update()
     {
         changeTime -= Time.deltaTime;
+        fKeyDelay -= Time.deltaTime;
+
+        if (fKeyDelay < 0 && Input.GetKeyDown(KeyCode.F))
+        {
+            StartCoroutine(FadeOutAndLoadScene());
+        }
+
         if (changeTime < 0)
         {
-            SceneManager.LoadScene(sceneName);
+            StartCoroutine(FadeOutAndLoadScene());
         }
+    }
+
+    IEnumerator FadeOutAndLoadScene()
+    {
+        float t = 0f;
+        fadePanel.blocksRaycasts = true; // Make sure input is blocked during fade
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            fadePanel.alpha = Mathf.Lerp(0f, 1f, t / fadeDuration);
+            yield return null;
+        }
+
+        fadePanel.alpha = 1f;
+        SceneManager.LoadScene(sceneName);
     }
 }
