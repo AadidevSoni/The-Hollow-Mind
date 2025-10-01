@@ -81,4 +81,10 @@ public class PlayerMovement : MonoBehaviour
         // Simple ground check (raycast down a bit below player center)
         return Physics.Raycast(transform.position, Vector3.down, 1.1f);
     }
+
+    public void SetSensitivity(float value)
+    {
+        mouseSensitivity = value;
+        // If you have a camera look script, apply this sensitivity to it here
+    }
 }
