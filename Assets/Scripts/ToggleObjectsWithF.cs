@@ -2,9 +2,11 @@ using UnityEngine;
 
 public class ToggleObjectsWithF : MonoBehaviour
 {
-    public GameObject[] objectsToToggle; // Assign in Inspector
+    public GameObject[] objectsToToggle;
     private bool isVisible = false;
     private bool canToggle = true; // Control flag
+
+    public PlayerInventory playerInventory; // Reference to inventory
 
     void Update()
     {
@@ -14,6 +16,10 @@ public class ToggleObjectsWithF : MonoBehaviour
 
             foreach (GameObject obj in objectsToToggle)
             {
+                // Skip currently equipped item
+                if (playerInventory != null && obj == playerInventory.GetEquippedItem())
+                    continue;
+
                 obj.SetActive(isVisible);
             }
         }
