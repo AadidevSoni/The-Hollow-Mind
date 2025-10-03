@@ -11,9 +11,11 @@ public class TorchController : MonoBehaviour
         if (torchLight == null)
             torchLight = GetComponentInChildren<Light>();
 
-        // Start with torch off
-        torchLight.enabled = false;
+        // Start with torch ON by default
+        torchLight.enabled = true;
+        isOn = true; // make sure the toggle state matches
     }
+
 
     // This is now called by the inventory system
     public void ToggleTorch()

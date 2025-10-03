@@ -20,19 +20,6 @@ public class PlayerControlling : MonoBehaviour
     public float gravityForce = -9.8f;
     float yVelocity;
 
-    // ✅ Head bobbing
-    public float walkBobSpeed = 6f;
-    public float walkBobAmount = 0.05f;
-    public float sprintBobSpeed = 9f;
-    public float sprintBobAmount = 0.1f;
-    public float crouchBobSpeed = 4f;
-    public float crouchBobAmount = 0.025f;
-    public float idleBobSpeed = 1.5f;
-    public float idleBobAmount = 0.015f;
-
-    private float defaultCamY;
-    private float bobTimer = 0f;
-
     // ✅ Stamina
     public float maxStamina = 5f;
     public float staminaRegenRate = 1.5f;
@@ -43,19 +30,21 @@ public class PlayerControlling : MonoBehaviour
     // ✅ Crouch
     private bool isCrouching = false;
 
-    // ✅ NEW FEATURE: Footsteps
+    // ✅ Footsteps
     public AudioSource footstepSource;
-    public AudioClip[] walkClips;
-    public AudioClip[] sprintClips;
-    public AudioClip[] crouchClips;
-    public float stepInterval = 0.5f;
+    public AudioClip footstepClip;   // 👣 Single clip
+    public AudioClip jumpClip;       // 😤 Jump grunt
+    public float baseStepInterval = 0.6f;
     private float stepCycle = 0f;
 
-    // ✅ NEW FEATURE: FOV Kick
+    // ✅ FOV Kick
     public float normalFOV = 60f;
     public float sprintFOV = 75f;
     public float fovTransitionSpeed = 5f;
     private Camera playerCam;
+
+    private float yaw = 0f;
+    private float pitch = 0f;
 
     void Start()
     {
@@ -65,7 +54,6 @@ public class PlayerControlling : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        defaultCamY = cam.transform.localPosition.y;
         currentStamina = maxStamina;
         playerCam.fieldOfView = normalFOV;
 
@@ -124,7 +112,18 @@ public class PlayerControlling : MonoBehaviour
             if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.J)) // Space or J
             {
                 if (!isCrouching)
+                {
                     yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravityForce);
+
+                    // 🔊 Play jump grunt with random pitch & volume
+                    if (footstepSource != null && jumpClip != null)
+                    {
+                        footstepSource.pitch = Random.Range(0.8f, 1.3f);   // random pitch
+                        float volume = Random.Range(0.2f, 0.4f);           // random volume
+                        footstepSource.PlayOneShot(jumpClip, volume);
+                        footstepSource.pitch = 1f; // reset pitch
+                    }
+                }
             }
         }
         else
@@ -141,13 +140,10 @@ public class PlayerControlling : MonoBehaviour
             character.height = isCrouching ? 1.2f : 2f;
             cam.transform.localPosition = new Vector3(
                     cam.transform.localPosition.x,
-                    isCrouching ? defaultCamY - 0.5f : defaultCamY,
+                    isCrouching ? 0.5f : 1f,
                     cam.transform.localPosition.z
             );
         }
-
-        // ✅ Head bobbing
-        HandleHeadBobbing(currentSpeed);
 
         // ✅ Footsteps
         HandleFootsteps(currentSpeed);
@@ -155,79 +151,51 @@ public class PlayerControlling : MonoBehaviour
         // ✅ FOV Kick
         HandleFOV(currentSpeed);
 
-        // ✅ Rotation (kept from your original code)
-        if (webGLRightClickRotation)
-        {
-            CameraRotation(cam, rotX, rotY);
-        }
-        else
-        {
-            CameraRotation(cam, rotX, rotY);
-        }
+        // ✅ Rotation
+        CameraRotation(cam, rotX, rotY);
 
         movement = transform.rotation * movement;
         character.Move(movement * Time.deltaTime);
     }
 
-    void HandleHeadBobbing(float currentSpeed)
-    {
-        if (character.isGrounded)
-        {
-            if (Mathf.Abs(moveFB) > 0.1f || Mathf.Abs(moveLR) > 0.1f)
-            {
-                bobTimer += Time.deltaTime * (isCrouching ? crouchBobSpeed : (currentSpeed == sprintSpeed ? sprintBobSpeed : walkBobSpeed));
-                float bobAmount = isCrouching ? crouchBobAmount : (currentSpeed == sprintSpeed ? sprintBobAmount : walkBobAmount);
-                float newY = defaultCamY + Mathf.Sin(bobTimer) * bobAmount;
-                cam.transform.localPosition = new Vector3(cam.transform.localPosition.x, newY, cam.transform.localPosition.z);
-            }
-            else
-            {
-                bobTimer += Time.deltaTime * idleBobSpeed;
-                float newY = defaultCamY + Mathf.Sin(bobTimer) * idleBobAmount;
-                cam.transform.localPosition = new Vector3(cam.transform.localPosition.x, newY, cam.transform.localPosition.z);
-            }
-        }
-    }
-
-    // ✅ NEW FEATURE: Footsteps
+    // ✅ Footsteps cadence with random pitch
     void HandleFootsteps(float currentSpeed)
     {
         if (!character.isGrounded) return;
+        if (character.velocity.magnitude < 2f) return;
 
-        if (character.velocity.magnitude > 2f)
+        stepCycle += Time.deltaTime;
+
+        float interval = baseStepInterval;
+
+        if (isCrouching) interval *= 1.5f;          // slower cadence
+        else if (currentSpeed == sprintSpeed) interval *= 0.6f; // faster cadence
+
+        if (stepCycle > interval)
         {
-            stepCycle += Time.deltaTime * (character.velocity.magnitude + currentSpeed);
-            if (stepCycle > stepInterval)
+            stepCycle = 0f;
+            if (footstepSource != null && footstepClip != null)
             {
-                stepCycle = 0f;
+                // 🎵 Random pitch variation
+                footstepSource.pitch = Random.Range(0.9f, 1.1f);
 
-                if (footstepSource != null)
-                {
-                    AudioClip clip = null;
+                // 👣 Volume depends on state
+                float volume = isCrouching ? 0.3f : (currentSpeed == sprintSpeed ? 0.7f : 0.5f);
 
-                    if (isCrouching && crouchClips.Length > 0)
-                        clip = crouchClips[Random.Range(0, crouchClips.Length)];
-                    else if (currentSpeed == sprintSpeed && sprintClips.Length > 0)
-                        clip = sprintClips[Random.Range(0, sprintClips.Length)];
-                    else if (walkClips.Length > 0)
-                        clip = walkClips[Random.Range(0, walkClips.Length)];
+                footstepSource.PlayOneShot(footstepClip, volume);
 
-                    if (clip != null) footstepSource.PlayOneShot(clip);
-                }
+                // Reset pitch back
+                footstepSource.pitch = 1f;
             }
         }
     }
 
-    // ✅ NEW FEATURE: FOV Kick
+    // ✅ FOV Kick
     void HandleFOV(float currentSpeed)
     {
         float targetFOV = (currentSpeed == sprintSpeed) ? sprintFOV : normalFOV;
         playerCam.fieldOfView = Mathf.Lerp(playerCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
     }
-
-    // Add these variables at the top
-    private float yaw = 0f;
-    private float pitch = 0f;
 
     void CameraRotation(GameObject cam, float rotX, float rotY)
     {
@@ -243,6 +211,5 @@ public class PlayerControlling : MonoBehaviour
     public void SetSensitivity(float value)
     {
         sensitivity = value;
-        // If you have a camera look script, apply this sensitivity to it here
     }
 }

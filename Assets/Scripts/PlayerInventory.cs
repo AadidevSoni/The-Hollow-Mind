@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class PlayerInventory : MonoBehaviour
 {
@@ -16,7 +17,8 @@ public class PlayerInventory : MonoBehaviour
     public Transform pickaxeHandTransform;
 
     [Header("UI")]
-    public Text pickupMessage;
+    public TextMeshProUGUI pickupMessage;
+
 
     private GameObject itemInView;
 
