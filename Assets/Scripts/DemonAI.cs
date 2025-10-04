@@ -432,6 +432,15 @@ public class DemonAI : MonoBehaviour
         agent.isStopped = true;
         UpdateAnimatorSpeed(0f);
 
+        // Play teleport animation
+        if (animator != null)
+        {
+            animator.SetTrigger("Teleport");
+            // Optional: wait a short delay for visual effect
+            yield return new WaitForSeconds(0.3f); // match animation anticipation
+        }
+
+        // Pause before moving
         yield return new WaitForSeconds(teleportPause);
 
         if (player != null)
@@ -449,7 +458,10 @@ public class DemonAI : MonoBehaviour
         unreachableTimer = 0f;
         isTeleporting = false;
         agent.isStopped = false;
+
+        // Optional: play arrival effect or reset animation
     }
+
     #endregion
 
     #region Stun
