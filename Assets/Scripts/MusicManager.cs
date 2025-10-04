@@ -8,42 +8,45 @@ public class MusicManager : MonoBehaviour
     public float fadeDuration = 1.5f;
 
     private Coroutine currentFade;
-
     [HideInInspector]
     public bool IsInDemonDimension = false;
 
     void Start()
     {
+        // Only play the initial music
         realWorldMusic.volume = 1f;
-        demonMusic.volume = 0f;
-
         realWorldMusic.Play();
-        demonMusic.Play();
+
+        demonMusic.volume = 0f;
+        demonMusic.Stop();
     }
 
     public void EnterDemonDimension()
     {
+        if (IsInDemonDimension) return;
         IsInDemonDimension = true;
 
         if (currentFade != null) StopCoroutine(currentFade);
-        currentFade = StartCoroutine(FadeMusicAndRestart(realWorldMusic, demonMusic));
+        demonMusic.Play(); // Start demon music
+        currentFade = StartCoroutine(FadeMusic(realWorldMusic, demonMusic));
     }
 
     public void ExitDemonDimension()
     {
+        if (!IsInDemonDimension) return;
         IsInDemonDimension = false;
 
         if (currentFade != null) StopCoroutine(currentFade);
-        currentFade = StartCoroutine(FadeMusicAndRestart(demonMusic, realWorldMusic));
+        realWorldMusic.Play(); // Start real world music
+        currentFade = StartCoroutine(FadeMusic(demonMusic, realWorldMusic));
     }
 
-    private IEnumerator FadeMusicAndRestart(AudioSource from, AudioSource to)
+    private IEnumerator FadeMusic(AudioSource from, AudioSource to)
     {
         float timer = 0f;
         float startFrom = from.volume;
         float startTo = to.volume;
 
-        // Fade out 'from' and fade in 'to'
         while (timer < fadeDuration)
         {
             timer += Time.deltaTime;
@@ -55,12 +58,8 @@ public class MusicManager : MonoBehaviour
             yield return null;
         }
 
-        // Ensure final volumes
         from.volume = 0f;
+        from.Stop(); // Stop faded-out track
         to.volume = 1f;
-
-        // Restart only the faded-out music
-        from.time = 0f;
     }
-
 }

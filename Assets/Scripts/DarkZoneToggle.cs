@@ -1,17 +1,24 @@
 using UnityEngine;
-using UnityEngine.Rendering.PostProcessing; // only if you’re using Built-in with PostProcessing package
 
 public class DarkZoneToggle : MonoBehaviour
 {
-    public GameObject darkZone; // assign your DarkZone GameObject in inspector
+    public GameObject darkZone;
     private bool isActive = false;
 
-    void Update()
+    private void OnEnable()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            isActive = !isActive; // flip state
-            darkZone.SetActive(isActive); // turn post process on/off
-        }
+        FKeyManager.Instance.OnFKeyPressed += ToggleDarkZone;
+    }
+
+    private void OnDisable()
+    {
+        if (FKeyManager.Instance != null)
+            FKeyManager.Instance.OnFKeyPressed -= ToggleDarkZone;
+    }
+
+    private void ToggleDarkZone()
+    {
+        isActive = !isActive;
+        darkZone.SetActive(isActive);
     }
 }

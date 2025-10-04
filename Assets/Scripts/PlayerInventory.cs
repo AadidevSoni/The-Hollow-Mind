@@ -44,7 +44,18 @@ public class PlayerInventory : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, pickupRange, pickupLayer))
         {
-            itemInView = hit.collider.gameObject;
+            GameObject hitItem = hit.collider.gameObject;
+
+            // Ignore the currently equipped item
+            if (hitItem == GetEquippedItem())
+            {
+                itemInView = null;
+                if (pickupMessage != null)
+                    pickupMessage.enabled = false;
+                return;
+            }
+
+            itemInView = hitItem;
             if (pickupMessage != null)
             {
                 pickupMessage.text = "Press E to equip " + itemInView.name;
@@ -58,6 +69,7 @@ public class PlayerInventory : MonoBehaviour
                 pickupMessage.enabled = false;
         }
     }
+
 
     void TryPickupItem(GameObject item)
     {
@@ -141,7 +153,7 @@ public class PlayerInventory : MonoBehaviour
         if (equippedItem == null) return;
 
         TorchController torch = equippedItem.GetComponent<TorchController>();
-        if (torch != null && Input.GetMouseButtonDown(0))
+        if (torch != null && Input.GetMouseButtonDown(1))
         {
             torch.ToggleTorch();
         }
