@@ -33,6 +33,12 @@ public class PlayerControlling : MonoBehaviour
     private float yaw = 0f;
     private float pitch = 0f;
 
+    // 👇 Added for natural idle bobbing
+    private float idleBobSpeed = 1.2f;
+    private float idleBobAmount = 0.02f;
+    private Vector3 originalCamLocalPos;
+    private float idleTimer = 0f;
+
     void Start()
     {
         character = GetComponent<CharacterController>();
@@ -43,6 +49,8 @@ public class PlayerControlling : MonoBehaviour
 
         currentStamina = maxStamina;
         playerCam.fieldOfView = normalFOV;
+
+        originalCamLocalPos = cam.transform.localPosition; // store start position
 
         if (Application.isEditor)
         {
@@ -70,12 +78,12 @@ public class PlayerControlling : MonoBehaviour
                     isCrouching ? 0.5f : 1f,
                     cam.transform.localPosition.z
             );
+            originalCamLocalPos = cam.transform.localPosition; // reset base for bobbing
         }
 
         HandleFootsteps();
-
         HandleFOV();
-
+        HandleIdleBobbing(); // 👈 Added bobbing handler
         CameraRotation(cam, rotX, rotY);
     }
 
@@ -96,7 +104,7 @@ public class PlayerControlling : MonoBehaviour
             }
             else
             {
-                isExhausted = false; // still enough stamina to run
+                isExhausted = false;
             }
         }
         else if (isCrouching)
@@ -138,7 +146,6 @@ public class PlayerControlling : MonoBehaviour
         character.Move(movement * Time.deltaTime);
     }
 
-
     void HandleFootsteps()
     {
         if (!character.isGrounded) return;
@@ -175,11 +182,29 @@ public class PlayerControlling : MonoBehaviour
         playerCam.fieldOfView = Mathf.Lerp(playerCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
     }
 
+    // 👇 Added for natural idle breathing/bobbing
+    void HandleIdleBobbing()
+    {
+        float horizontalSpeed = new Vector3(character.velocity.x, 0, character.velocity.z).magnitude;
+
+        if (horizontalSpeed < 0.1f && character.isGrounded && !isCrouching)
+        {
+            idleTimer += Time.deltaTime * idleBobSpeed;
+            float newY = originalCamLocalPos.y + Mathf.Sin(idleTimer) * idleBobAmount;
+            cam.transform.localPosition = new Vector3(originalCamLocalPos.x, newY, originalCamLocalPos.z);
+        }
+        else
+        {
+            // Smoothly return to original position when moving
+            cam.transform.localPosition = Vector3.Lerp(cam.transform.localPosition, originalCamLocalPos, Time.deltaTime * 4f);
+            idleTimer = 0f;
+        }
+    }
+
     void CameraRotation(GameObject cam, float rotX, float rotY)
     {
         yaw += rotX * Time.deltaTime;
         pitch -= rotY * Time.deltaTime;
-
         pitch = Mathf.Clamp(pitch, -80f, 80f);
 
         transform.localRotation = Quaternion.Euler(0, yaw, 0);

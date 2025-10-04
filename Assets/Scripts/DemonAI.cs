@@ -29,18 +29,23 @@ public class DemonAI : MonoBehaviour
     public float wanderRadius = 10f;
     public float wanderInterval = 5f;
 
+    [Header("Search Behavior")]
+    public float searchSpeed = 7f; // set desired speed for searching
+
+
     [Header("Movement")]
     public float moveSpeed = 3.5f;
 
     [Header("Rotation")]
-    public float rotationSpeed = 5f; // Smooth rotation speed
+    public float rotationSpeed = 5f;
 
     [Header("Animation")]
     public float speedMultiplier = 1f;
 
-    [Header("Jump")]
-    public float jumpHeight = 2f;
-    public float jumpDuration = 0.7f;
+    [Header("Teleport")]
+    public float unreachableDuration = 2f;
+    public float teleportPause = 2.5f;
+    public float teleportOffset = 2f;
 
     private NavMeshAgent agent;
     private Animator animator;
@@ -51,17 +56,18 @@ public class DemonAI : MonoBehaviour
     private bool isSearching = false;
     private float wanderTimer;
     private bool isAttacking = false;
-    private bool isJumping = false;
+    private bool isTeleporting = false;
+    private float unreachableTimer = 0f;
+    private float nextSearchPointTime = 0f;
 
     [Header("Combat")]
-    public Collider handHitbox; // assign in inspector
+    public Collider handHitbox;
 
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
-        if (animator == null) Debug.LogError("Animator not found in children!");
 
         if (player == null)
         {
@@ -95,14 +101,12 @@ public class DemonAI : MonoBehaviour
         float distToPlayer = Vector3.Distance(transform.position, player.position);
         bool playerDetected = distToPlayer <= autoSenseRadius || CanSeePlayer();
 
-        // Attack if in range
         if (!isAttacking && distToPlayer <= attackRange && Time.time >= nextAttackTime && playerDetected)
         {
             StartCoroutine(DoAttack());
         }
 
-        // Movement only if not attacking or jumping
-        if (!isAttacking && !isJumping)
+        if (!isAttacking && !isTeleporting)
         {
             if (playerDetected)
             {
@@ -119,12 +123,19 @@ public class DemonAI : MonoBehaviour
                 bool pathBlocked = path.status != NavMeshPathStatus.PathComplete;
                 float yDiff = player.position.y - transform.position.y;
                 bool verticalTooHigh = Mathf.Abs(yDiff) > 2f;
-                bool shouldJump = pathBlocked && verticalTooHigh;
 
-                if (shouldJump && !isJumping)
-                    StartCoroutine(JumpToPlayer(player.position));
+                if (pathBlocked || verticalTooHigh)
+                {
+                    unreachableTimer += Time.deltaTime;
+
+                    if (unreachableTimer >= unreachableDuration && distToPlayer <= autoSenseRadius)
+                    {
+                        StartCoroutine(TeleportNearPlayer());
+                    }
+                }
                 else
                 {
+                    unreachableTimer = 0f;
                     if (distToPlayer > attackRange)
                     {
                         agent.isStopped = false;
@@ -146,7 +157,7 @@ public class DemonAI : MonoBehaviour
             }
             else if (isSearching)
             {
-                SearchAround();
+                GlobalSearch();
             }
             else
             {
@@ -154,8 +165,7 @@ public class DemonAI : MonoBehaviour
             }
         }
 
-        // Animator speed
-        if (!isAttacking && !isJumping)
+        if (!isAttacking && !isTeleporting)
             UpdateAnimatorSpeed(agent.velocity.magnitude);
         else
             UpdateAnimatorSpeed(0f);
@@ -206,21 +216,59 @@ public class DemonAI : MonoBehaviour
     private void StartSearch()
     {
         isSearching = true;
-        searchEndTime = Time.time + searchDuration;
-        agent.isStopped = true;
-        UpdateAnimatorSpeed(0f);
+        agent.speed = searchSpeed;
+        PickNextSearchPoint();
+        agent.isStopped = false;
     }
 
-    private void SearchAround()
+    private void GlobalSearch()
     {
-        if (Time.time >= searchEndTime)
+        if (player == null)
         {
-            isSearching = false;
-            lastKnownPosition = Vector3.zero;
+            StopSearch();
             return;
         }
-        transform.Rotate(Vector3.up, searchTurnSpeed * Time.deltaTime);
+
+        if (CanSeePlayer() || Vector3.Distance(transform.position, player.position) <= autoSenseRadius)
+        {
+            StopSearch();
+            return;
+        }
+
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        {
+            PickNextSearchPoint();
+        }
+
+        agent.isStopped = false;
     }
+
+    private void PickNextSearchPoint()
+    {
+        Vector3 randomPoint;
+        NavMeshPath path = new NavMeshPath();
+        int attempts = 0;
+
+        do
+        {
+            randomPoint = RandomNavSphere(transform.position, 100f, -1);
+            agent.CalculatePath(randomPoint, path);
+            attempts++;
+            if (attempts > 10) break; // prevent infinite loop
+        }
+        while (path.status != NavMeshPathStatus.PathComplete);
+
+        agent.SetDestination(randomPoint);
+    }
+
+    private void StopSearch()
+    {
+        isSearching = false;
+        agent.speed = moveSpeed;
+    }
+
+
+
 
     private void WanderReset() => wanderTimer = wanderInterval;
 
@@ -238,13 +286,11 @@ public class DemonAI : MonoBehaviour
     {
         isAttacking = true;
         nextAttackTime = Time.time + attackCooldown;
-
         agent.isStopped = true;
 
         if (player != null)
             FacePlayerSmooth();
 
-        // Ensure hand collider is valid
         DemonHandCollider hand = null;
         if (handHitbox != null)
         {
@@ -252,15 +298,12 @@ public class DemonAI : MonoBehaviour
             if (hand != null)
                 hand.ResetDamageFlag();
 
-            handHitbox.enabled = true; // activate collider for attack
+            handHitbox.enabled = true;
         }
 
         animator.SetTrigger("Attack");
-
-        // Wait for the animation to start properly
         yield return null;
 
-        // Keep facing player and let collider deal damage
         while (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
         {
             if (player != null)
@@ -274,55 +317,48 @@ public class DemonAI : MonoBehaviour
         isAttacking = false;
     }
 
-
-
-
-
     public void OnAttackHit()
     {
         if (player == null) return;
 
         float dist = Vector3.Distance(transform.position, player.position);
-        if (dist <= attackRange + 0.5f) // Make sure player is close enough
+        if (dist <= attackRange + 0.5f)
         {
             PlayerHealth ph = player.GetComponent<PlayerHealth>();
             if (ph != null)
             {
-                ph.TakeDamage(25); // Decrease health by 25
+                ph.TakeDamage(25);
             }
         }
     }
-
     #endregion
 
-    #region Jump
-    private IEnumerator JumpToPlayer(Vector3 target)
+    #region Teleport
+    private IEnumerator TeleportNearPlayer()
     {
-        isJumping = true;
+        if (isTeleporting) yield break;
+
+        isTeleporting = true;
         agent.isStopped = true;
+        UpdateAnimatorSpeed(0f);
 
-        Vector3 startPos = transform.position;
-        Vector3 endPos = target;
-        float elapsed = 0f;
+        yield return new WaitForSeconds(teleportPause);
 
-        Vector3 dir = (target - transform.position).normalized;
-        transform.forward = new Vector3(dir.x, 0f, dir.z);
-
-        while (elapsed < jumpDuration)
+        if (player != null)
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / jumpDuration;
-            Vector3 pos = Vector3.Lerp(startPos, endPos, t);
-            pos.y += jumpHeight * 4 * t * (1 - t);
-            transform.position = pos;
-            UpdateAnimatorSpeed(0f);
-            yield return null;
+            Camera cam = Camera.main;
+            Vector3 front = cam.transform.forward;
+            Vector3 spawnPos = cam.transform.position + front * teleportOffset;
+            spawnPos.y = cam.transform.position.y - 1.0f;
+
+            transform.position = spawnPos;
+            transform.LookAt(player);
+            agent.Warp(spawnPos);
         }
 
-        transform.position = endPos;
-        agent.Warp(endPos);
+        unreachableTimer = 0f;
+        isTeleporting = false;
         agent.isStopped = false;
-        isJumping = false;
     }
     #endregion
 
