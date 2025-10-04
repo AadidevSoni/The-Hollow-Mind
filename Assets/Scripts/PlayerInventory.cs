@@ -18,8 +18,6 @@ public class PlayerInventory : MonoBehaviour
 
     [Header("UI")]
     public TextMeshProUGUI pickupMessage;
-
-
     private GameObject itemInView;
 
     void Update()

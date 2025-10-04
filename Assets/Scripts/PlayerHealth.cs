@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    public HealthBar healthBar; // assign your UI slider here
+    public HealthBar healthBar;
     public float maxHealth = 100f;
     private float currentHealth;
 
@@ -10,7 +10,7 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth = maxHealth;
         if (healthBar != null)
-            healthBar.SetHealth(currentHealth); // initialize slider
+            healthBar.SetHealth(currentHealth);
     }
 
     public void TakeDamage(float amount)
@@ -19,7 +19,7 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth < 0) currentHealth = 0;
 
         if (healthBar != null)
-            healthBar.SetHealth(currentHealth); // update slider
+            healthBar.SetHealth(currentHealth);
     }
 
     public void Heal(float amount)
@@ -28,6 +28,6 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth > maxHealth) currentHealth = maxHealth;
 
         if (healthBar != null)
-            healthBar.SetHealth(currentHealth); // update slider
+            healthBar.SetHealth(currentHealth);
     }
 }

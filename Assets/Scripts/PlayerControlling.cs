@@ -5,44 +5,31 @@ using UnityEngine;
 public class PlayerControlling : MonoBehaviour
 {
     public float speed = 5f;
-    public float sprintSpeed = 10f;
+    public float runSpeed = 10f;
     public float crouchSpeed = 2.5f;
     public float sensitivity = 300f;
-    public float WaterHeight = 15.5f;
     CharacterController character;
     public GameObject cam;
     float moveFB, moveLR;
     float rotX, rotY;
     public bool webGLRightClickRotation = true;
-
-    // ✅ Jump / Gravity
     public float jumpHeight = 2f;
     public float gravityForce = -9.8f;
     float yVelocity;
-
-    // ✅ Stamina
-    public float maxStamina = 5f;
-    public float staminaRegenRate = 1.5f;
-    public float sprintStaminaDrain = 1f;
+    public float maxStamina = 100f;
+    public float staminaRegenRate = 15f;
+    public float runStaminaDrain = 10f;
     private float currentStamina;
     private bool isExhausted = false;
-
-    // ✅ Crouch
     private bool isCrouching = false;
-
-    // ✅ Footsteps
     public AudioSource footstepSource;
-    public AudioClip footstepClip;   // 👣 Single clip
-    public AudioClip jumpClip;       // 😤 Jump grunt
+    public AudioClip footstepClip;
     public float baseStepInterval = 0.6f;
     private float stepCycle = 0f;
-
-    // ✅ FOV Kick
     public float normalFOV = 60f;
-    public float sprintFOV = 75f;
+    public float runFOV = 75f;
     public float fovTransitionSpeed = 5f;
     private Camera playerCam;
-
     private float yaw = 0f;
     private float pitch = 0f;
 
@@ -72,13 +59,34 @@ public class PlayerControlling : MonoBehaviour
         rotX = Input.GetAxis("Mouse X") * sensitivity;
         rotY = Input.GetAxis("Mouse Y") * sensitivity;
 
-        // ✅ Movement speed logic
+        HandleMovement();
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            isCrouching = !isCrouching;
+            character.height = isCrouching ? 1.2f : 2f;
+            cam.transform.localPosition = new Vector3(
+                    cam.transform.localPosition.x,
+                    isCrouching ? 0.5f : 1f,
+                    cam.transform.localPosition.z
+            );
+        }
+
+        HandleFootsteps();
+
+        HandleFOV();
+
+        CameraRotation(cam, rotX, rotY);
+    }
+
+    void HandleMovement()
+    {
         float currentSpeed = speed;
 
         if (Input.GetKey(KeyCode.LeftShift) && moveFB > 0.1f && !isCrouching && !isExhausted)
         {
-            currentSpeed = sprintSpeed;
-            currentStamina -= sprintStaminaDrain * Time.deltaTime;
+            currentSpeed = runSpeed;
+            currentStamina -= runStaminaDrain * Time.deltaTime;
             if (currentStamina <= 0)
             {
                 currentStamina = 0;
@@ -104,25 +112,15 @@ public class PlayerControlling : MonoBehaviour
 
         Vector3 movement = new Vector3(moveLR * currentSpeed, 0, moveFB * currentSpeed);
 
-        // ✅ Gravity / Jump
         if (character.isGrounded)
         {
             yVelocity = -1f;
 
-            if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.J)) // Space or J
+            if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.J))
             {
                 if (!isCrouching)
                 {
                     yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravityForce);
-
-                    // 🔊 Play jump grunt with random pitch & volume
-                    if (footstepSource != null && jumpClip != null)
-                    {
-                        footstepSource.pitch = Random.Range(0.8f, 1.3f);   // random pitch
-                        float volume = Random.Range(0.2f, 0.4f);           // random volume
-                        footstepSource.PlayOneShot(jumpClip, volume);
-                        footstepSource.pitch = 1f; // reset pitch
-                    }
                 }
             }
         }
@@ -132,68 +130,43 @@ public class PlayerControlling : MonoBehaviour
         }
 
         movement.y = yVelocity;
-
-        // ✅ Crouch toggle
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            isCrouching = !isCrouching;
-            character.height = isCrouching ? 1.2f : 2f;
-            cam.transform.localPosition = new Vector3(
-                    cam.transform.localPosition.x,
-                    isCrouching ? 0.5f : 1f,
-                    cam.transform.localPosition.z
-            );
-        }
-
-        // ✅ Footsteps
-        HandleFootsteps(currentSpeed);
-
-        // ✅ FOV Kick
-        HandleFOV(currentSpeed);
-
-        // ✅ Rotation
-        CameraRotation(cam, rotX, rotY);
-
         movement = transform.rotation * movement;
         character.Move(movement * Time.deltaTime);
     }
 
-    // ✅ Footsteps cadence with random pitch
-    void HandleFootsteps(float currentSpeed)
+    void HandleFootsteps()
     {
         if (!character.isGrounded) return;
-        if (character.velocity.magnitude < 2f) return;
 
-        stepCycle += Time.deltaTime;
+        float horizontalSpeed = new Vector3(character.velocity.x, 0, character.velocity.z).magnitude;
+        if (horizontalSpeed < 1f) return;
 
         float interval = baseStepInterval;
 
-        if (isCrouching) interval *= 1.5f;          // slower cadence
-        else if (currentSpeed == sprintSpeed) interval *= 0.6f; // faster cadence
+        if (isCrouching) interval *= 1.5f;
+        else if (horizontalSpeed > runSpeed - 1f) interval *= 0.7f;
+        else interval *= 1.0f;
+
+        stepCycle += Time.deltaTime;
 
         if (stepCycle > interval)
         {
             stepCycle = 0f;
             if (footstepSource != null && footstepClip != null)
             {
-                // 🎵 Random pitch variation
-                footstepSource.pitch = Random.Range(0.9f, 1.1f);
-
-                // 👣 Volume depends on state
-                float volume = isCrouching ? 0.3f : (currentSpeed == sprintSpeed ? 0.7f : 0.5f);
-
+                footstepSource.pitch = Random.Range(0.95f, 1.05f);
+                float volume = isCrouching ? 0.3f : (horizontalSpeed > runSpeed - 1f ? 0.6f : 0.5f);
                 footstepSource.PlayOneShot(footstepClip, volume);
-
-                // Reset pitch back
                 footstepSource.pitch = 1f;
             }
         }
     }
 
-    // ✅ FOV Kick
-    void HandleFOV(float currentSpeed)
+    void HandleFOV()
     {
-        float targetFOV = (currentSpeed == sprintSpeed) ? sprintFOV : normalFOV;
+        float targetFOV = normalFOV;
+        if ((Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.LeftShift)) && moveFB > 0.1f && !isCrouching && !isExhausted)
+            targetFOV = runFOV;
         playerCam.fieldOfView = Mathf.Lerp(playerCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
     }
 
@@ -211,5 +184,15 @@ public class PlayerControlling : MonoBehaviour
     public void SetSensitivity(float value)
     {
         sensitivity = value;
+    }
+
+    public float GetCurrentStamina()
+    {
+        return currentStamina;
+    }
+
+    public float GetMaxStamina()
+    {
+        return maxStamina;
     }
 }
