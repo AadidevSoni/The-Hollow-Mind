@@ -30,8 +30,7 @@ public class DemonAI : MonoBehaviour
     public float wanderInterval = 5f;
 
     [Header("Search Behavior")]
-    public float searchSpeed = 7f; // set desired speed for searching
-
+    public float searchSpeed = 7f;
 
     [Header("Movement")]
     public float moveSpeed = 3.5f;
@@ -46,6 +45,15 @@ public class DemonAI : MonoBehaviour
     public float unreachableDuration = 2f;
     public float teleportPause = 2.5f;
     public float teleportOffset = 2f;
+
+    [Header("Flashlight")]
+    public Light playerFlashlight; // assign player's spotlight
+    public float fleeSpeed = 10f;
+    public float fleeMargin = 2f;
+    public float fleeUpdateInterval = 0.4f;
+
+    private bool isFleeing = false;
+    private float nextFleeUpdateTime = 0f;
 
     private NavMeshAgent agent;
     private Animator animator;
@@ -62,7 +70,6 @@ public class DemonAI : MonoBehaviour
 
     [Header("Combat")]
     public Collider handHitbox;
-
 
     private void Awake()
     {
@@ -83,6 +90,75 @@ public class DemonAI : MonoBehaviour
 
     private void Update()
     {
+        // ---------- Determine fleeing condition ----------
+        bool shouldFlee = false;
+        if (playerFlashlight != null && player != null)
+        {
+            bool flashlightOn = playerFlashlight.enabled;
+            float distToPlayer = Vector3.Distance(transform.position, player.position);
+
+            // Check cone (only if flashlight is on)
+            bool inFlashlightCone = false;
+            if (flashlightOn)
+            {
+                Vector3 toDemonFromLight = transform.position - playerFlashlight.transform.position;
+                float angle = Vector3.Angle(playerFlashlight.transform.forward, toDemonFromLight);
+                float distanceFromLight = toDemonFromLight.magnitude;
+
+                if (angle <= playerFlashlight.spotAngle * 0.5f && distanceFromLight <= playerFlashlight.range)
+                {
+                    if (Physics.Raycast(playerFlashlight.transform.position, toDemonFromLight.normalized, out RaycastHit hit, distanceFromLight + 0.05f))
+                    {
+                        if (hit.collider != null && (hit.collider.transform.IsChildOf(transform) || hit.collider.gameObject == this.gameObject))
+                            inFlashlightCone = true;
+                    }
+                }
+            }
+
+            // Should flee if flashlight is ON and player is within sightRange OR if demon is inside flashlight cone
+            shouldFlee = (playerFlashlight.enabled && Vector3.Distance(transform.position, player.position) <= sightRange) || inFlashlightCone;
+
+            if (shouldFlee && !isFleeing) StartFlee();
+            else if (!shouldFlee && isFleeing) StopFlee();
+        }
+
+        // ---------- Handle ongoing fleeing ----------
+        if (isFleeing)
+        {
+            if (Time.time >= nextFleeUpdateTime && player != null)
+            {
+                Vector3 awayDir = (transform.position - player.position).normalized;
+                float desiredDistance = sightRange + fleeMargin;
+
+                Vector3 fleeTarget = transform.position + awayDir * desiredDistance;
+
+                // try to sample the navmesh near that point
+                if (NavMesh.SamplePosition(fleeTarget, out NavMeshHit hit, desiredDistance * 1.2f, NavMesh.AllAreas))
+                {
+                    agent.isStopped = false;
+                    agent.speed = fleeSpeed;
+                    agent.SetDestination(hit.position);
+                }
+                else
+                {
+                    // fallback: try a smaller step away or random offset
+                    Vector3 fallback = transform.position + awayDir * Mathf.Max(6f, desiredDistance * 0.6f) + Random.insideUnitSphere * 2f;
+                    if (NavMesh.SamplePosition(fallback, out NavMeshHit hit2, 6f, NavMesh.AllAreas))
+                    {
+                        agent.isStopped = false;
+                        agent.speed = fleeSpeed;
+                        agent.SetDestination(hit2.position);
+                    }
+                }
+
+                nextFleeUpdateTime = Time.time + fleeUpdateInterval;
+            }
+
+            UpdateAnimatorSpeed(agent.velocity.magnitude);
+            return; // skip normal AI while fleeing
+        }
+
+        // ---------- Existing AI logic ----------
         agent.speed = moveSpeed;
 
         if (isStunned)
@@ -98,13 +174,11 @@ public class DemonAI : MonoBehaviour
 
         if (player == null) return;
 
-        float distToPlayer = Vector3.Distance(transform.position, player.position);
-        bool playerDetected = distToPlayer <= autoSenseRadius || CanSeePlayer();
+        float distToPlayer2 = Vector3.Distance(transform.position, player.position);
+        bool playerDetected = distToPlayer2 <= autoSenseRadius || CanSeePlayer();
 
-        if (!isAttacking && distToPlayer <= attackRange && Time.time >= nextAttackTime && playerDetected)
-        {
+        if (!isAttacking && distToPlayer2 <= attackRange && Time.time >= nextAttackTime && playerDetected)
             StartCoroutine(DoAttack());
-        }
 
         if (!isAttacking && !isTeleporting)
         {
@@ -113,7 +187,6 @@ public class DemonAI : MonoBehaviour
                 lastKnownPosition = player.position;
                 isSearching = false;
                 WanderReset();
-
                 FacePlayerSmooth();
 
                 Vector3 playerGroundPos = new Vector3(player.position.x, transform.position.y, player.position.z);
@@ -127,29 +200,24 @@ public class DemonAI : MonoBehaviour
                 if (pathBlocked || verticalTooHigh)
                 {
                     unreachableTimer += Time.deltaTime;
-
-                    if (unreachableTimer >= unreachableDuration && distToPlayer <= autoSenseRadius)
-                    {
+                    if (unreachableTimer >= unreachableDuration && distToPlayer2 <= autoSenseRadius)
                         StartCoroutine(TeleportNearPlayer());
-                    }
                 }
                 else
                 {
                     unreachableTimer = 0f;
-                    if (distToPlayer > attackRange)
+                    if (distToPlayer2 > attackRange)
                     {
                         agent.isStopped = false;
                         agent.SetDestination(player.position);
                     }
-                    else
-                    {
-                        agent.isStopped = true;
-                    }
+                    else agent.isStopped = true;
                 }
             }
             else if (lastKnownPosition != Vector3.zero && !isSearching)
             {
                 agent.isStopped = false;
+                agent.speed = searchSpeed;
                 agent.SetDestination(lastKnownPosition);
 
                 if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
@@ -157,18 +225,49 @@ public class DemonAI : MonoBehaviour
             }
             else if (isSearching)
             {
+                agent.speed = searchSpeed;
                 GlobalSearch();
             }
             else
             {
+                agent.speed = moveSpeed;
                 Wander();
             }
         }
 
-        if (!isAttacking && !isTeleporting)
-            UpdateAnimatorSpeed(agent.velocity.magnitude);
-        else
-            UpdateAnimatorSpeed(0f);
+        UpdateAnimatorSpeed(agent.velocity.magnitude);
+    }
+
+    // ---------- Flashlight flee methods ----------
+    private void StartFlee()
+    {
+        isFleeing = true;
+        agent.speed = fleeSpeed;
+        agent.isStopped = false;
+        nextFleeUpdateTime = 0f;
+
+        // immediate flee target
+        if (player != null)
+        {
+            Vector3 awayDir = (transform.position - player.position).normalized;
+            float desiredDistance = sightRange + fleeMargin;
+            Vector3 fleeTarget = transform.position + awayDir * desiredDistance;
+
+            if (NavMesh.SamplePosition(fleeTarget, out NavMeshHit hit, desiredDistance * 1.2f, NavMesh.AllAreas))
+                agent.SetDestination(hit.position);
+            else
+            {
+                Vector3 fallback = transform.position + awayDir * Mathf.Max(6f, desiredDistance * 0.6f) + Random.insideUnitSphere * 2f;
+                if (NavMesh.SamplePosition(fallback, out NavMeshHit hit2, 6f, NavMesh.AllAreas))
+                    agent.SetDestination(hit2.position);
+            }
+        }
+    }
+
+    private void StopFlee()
+    {
+        isFleeing = false;
+        agent.speed = moveSpeed;
     }
 
     #region Detection
@@ -176,6 +275,7 @@ public class DemonAI : MonoBehaviour
     {
         Vector3 toPlayer = player.position - eyePoint.position;
         if (toPlayer.magnitude > sightRange) return false;
+
         float angle = Vector3.Angle(eyePoint.forward, toPlayer);
         if (angle > fov * 0.5f) return false;
 
@@ -236,9 +336,7 @@ public class DemonAI : MonoBehaviour
         }
 
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
-        {
             PickNextSearchPoint();
-        }
 
         agent.isStopped = false;
     }
@@ -254,7 +352,7 @@ public class DemonAI : MonoBehaviour
             randomPoint = RandomNavSphere(transform.position, 100f, -1);
             agent.CalculatePath(randomPoint, path);
             attempts++;
-            if (attempts > 10) break; // prevent infinite loop
+            if (attempts > 10) break;
         }
         while (path.status != NavMeshPathStatus.PathComplete);
 
@@ -266,9 +364,6 @@ public class DemonAI : MonoBehaviour
         isSearching = false;
         agent.speed = moveSpeed;
     }
-
-
-
 
     private void WanderReset() => wanderTimer = wanderInterval;
 
@@ -288,16 +383,13 @@ public class DemonAI : MonoBehaviour
         nextAttackTime = Time.time + attackCooldown;
         agent.isStopped = true;
 
-        if (player != null)
-            FacePlayerSmooth();
+        if (player != null) FacePlayerSmooth();
 
         DemonHandCollider hand = null;
         if (handHitbox != null)
         {
             hand = handHitbox.GetComponent<DemonHandCollider>();
-            if (hand != null)
-                hand.ResetDamageFlag();
-
+            if (hand != null) hand.ResetDamageFlag();
             handHitbox.enabled = true;
         }
 
@@ -306,9 +398,7 @@ public class DemonAI : MonoBehaviour
 
         while (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
         {
-            if (player != null)
-                FacePlayerSmooth();
-
+            if (player != null) FacePlayerSmooth();
             UpdateAnimatorSpeed(0f);
             yield return null;
         }
