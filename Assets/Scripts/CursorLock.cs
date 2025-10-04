@@ -1,50 +1,41 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-
-namespace Sun_Temple
+public class CursorLock : MonoBehaviour
 {
+    private bool isLocked = true;
+    public bool allowUnlock = true; // allow external control
 
-    public class CursorLock : MonoBehaviour
+    void Update()
     {
-
-        private bool isLocked;
-
-        void Start()
+        // Toggle lock with Escape only if allowed
+        if (allowUnlock && Input.GetKeyDown(KeyCode.Escape))
         {
-            isLocked = true;
+            isLocked = !isLocked;
         }
 
-        void Update()
+        if (isLocked)
         {
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (isLocked)
-                {
-                    isLocked = false;
-                }
-                else if (!isLocked)
-                {
-                    isLocked = true;
-                }
-            }
-
-            if (isLocked)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-
-            if (!isLocked)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
-
-
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
+    // External call to unlock cursor (e.g., after death)
+    public void UnlockCursor()
+    {
+        isLocked = false;
+        allowUnlock = false; // prevent locking again
+    }
+
+    // Optional: relock cursor (if needed)
+    public void LockCursor()
+    {
+        isLocked = true;
+        allowUnlock = true;
+    }
 }

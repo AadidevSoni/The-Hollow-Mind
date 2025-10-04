@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Sun_Temple;
+
 
 public class PlayerInventory : MonoBehaviour
 {
