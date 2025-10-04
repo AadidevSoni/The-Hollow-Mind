@@ -83,7 +83,9 @@ public class PlayerControlling : MonoBehaviour
     {
         float currentSpeed = speed;
 
-        if (Input.GetKey(KeyCode.LeftShift) && moveFB > 0.1f && !isCrouching && !isExhausted)
+        bool wantsToRun = Input.GetKey(KeyCode.LeftShift) && moveFB > 0.1f && !isCrouching;
+
+        if (wantsToRun && currentStamina > 0)
         {
             currentSpeed = runSpeed;
             currentStamina -= runStaminaDrain * Time.deltaTime;
@@ -91,6 +93,10 @@ public class PlayerControlling : MonoBehaviour
             {
                 currentStamina = 0;
                 isExhausted = true;
+            }
+            else
+            {
+                isExhausted = false; // still enough stamina to run
             }
         }
         else if (isCrouching)
@@ -103,10 +109,8 @@ public class PlayerControlling : MonoBehaviour
             if (currentStamina < maxStamina)
             {
                 currentStamina += staminaRegenRate * Time.deltaTime;
-                if (currentStamina >= maxStamina * 0.5f)
-                {
-                    isExhausted = false;
-                }
+                if (currentStamina > maxStamina)
+                    currentStamina = maxStamina;
             }
         }
 
@@ -133,6 +137,7 @@ public class PlayerControlling : MonoBehaviour
         movement = transform.rotation * movement;
         character.Move(movement * Time.deltaTime);
     }
+
 
     void HandleFootsteps()
     {

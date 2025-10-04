@@ -244,18 +244,28 @@ public class DemonAI : MonoBehaviour
         if (player != null)
             FacePlayerSmooth();
 
-        // Reset hitbox damage flag at the start of attack
+        // Ensure hand collider is valid
+        DemonHandCollider hand = null;
         if (handHitbox != null)
         {
-            DemonHandCollider hand = handHitbox.GetComponent<DemonHandCollider>();
-            if (hand != null) hand.ResetDamageFlag();
+            hand = handHitbox.GetComponent<DemonHandCollider>();
+            if (hand != null)
+                hand.ResetDamageFlag();
+
+            handHitbox.enabled = true; // activate collider for attack
         }
 
         animator.SetTrigger("Attack");
 
+        // Wait for the animation to start properly
+        yield return null;
+
+        // Keep facing player and let collider deal damage
         while (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
         {
-            FacePlayerSmooth();
+            if (player != null)
+                FacePlayerSmooth();
+
             UpdateAnimatorSpeed(0f);
             yield return null;
         }
@@ -263,6 +273,8 @@ public class DemonAI : MonoBehaviour
         agent.isStopped = false;
         isAttacking = false;
     }
+
+
 
 
 
