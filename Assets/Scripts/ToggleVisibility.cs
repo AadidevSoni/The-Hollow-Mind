@@ -1,15 +1,18 @@
 using UnityEngine;
+using System.Collections;
 
 public class ToggleVisibility : MonoBehaviour
 {
     [Header("Object to Toggle")]
-    public GameObject objectToHide;  // Assign in Inspector
+    public GameObject objectToHide;
 
-    private bool isVisible = true;
+    [Header("Dimension Switcher Reference")]
+    public DimensionSwitcher dimensionSwitcher;
+
+    private bool isVisible = true; // Start visible by default
 
     private void OnEnable()
     {
-        // Subscribe to F key press event
         if (FKeyManager.Instance != null)
             FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
         else
@@ -22,7 +25,7 @@ public class ToggleVisibility : MonoBehaviour
             FKeyManager.Instance.OnFKeyPressed -= OnFKeyPressed;
     }
 
-    private System.Collections.IEnumerator WaitForFKeyManager()
+    private IEnumerator WaitForFKeyManager()
     {
         while (FKeyManager.Instance == null)
             yield return null;
@@ -33,15 +36,32 @@ public class ToggleVisibility : MonoBehaviour
     private void Start()
     {
         if (objectToHide != null)
-            objectToHide.SetActive(isVisible);
+            objectToHide.SetActive(isVisible); // visible at start
     }
+
+    private void Update()
+    {
+        // Force object visible in Real World
+        if (dimensionSwitcher != null && !dimensionSwitcher.IsInDemonDimension)
+        {
+            if (objectToHide != null && !objectToHide.activeSelf)
+            {
+                objectToHide.SetActive(true);
+            }
+        }
+    }
+
 
     private void OnFKeyPressed()
     {
-        if (objectToHide != null)
+        // Only toggle in Demon World
+        if (dimensionSwitcher != null && dimensionSwitcher.IsInDemonDimension)
         {
-            isVisible = !isVisible;
-            objectToHide.SetActive(isVisible);
+            if (objectToHide != null)
+            {
+                isVisible = !isVisible;
+                objectToHide.SetActive(isVisible);
+            }
         }
     }
 }

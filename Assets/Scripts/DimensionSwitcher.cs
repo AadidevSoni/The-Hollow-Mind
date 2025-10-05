@@ -6,6 +6,9 @@ public class DimensionSwitcher : MonoBehaviour
     public MusicManager musicManager;
     private bool inDemon = false;
 
+    // Property to check current dimension
+    public bool IsInDemonDimension => inDemon;
+
     private void OnEnable()
     {
         StartCoroutine(WaitForFKeyManager());
@@ -28,7 +31,10 @@ public class DimensionSwitcher : MonoBehaviour
     private void OnFKeyPressed()
     {
         inDemon = !inDemon;
-        if (inDemon) musicManager.EnterDemonDimension();
-        else musicManager.ExitDemonDimension();
+
+        if (inDemon)
+            musicManager.EnterDemonDimension();
+        else
+            musicManager.ExitDemonDimension();
     }
 }

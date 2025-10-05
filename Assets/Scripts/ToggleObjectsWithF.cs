@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class ToggleObjectsWithF : MonoBehaviour
 {
@@ -8,11 +9,13 @@ public class ToggleObjectsWithF : MonoBehaviour
     [Header("Player Inventory (Optional)")]
     public PlayerInventory playerInventory;
 
+    [Header("Dimension Switcher Reference")]
+    public DimensionSwitcher dimensionSwitcher;
+
     private bool isVisible = false;
 
     private void OnEnable()
     {
-        // Subscribe to F key press event
         if (FKeyManager.Instance != null)
             FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
         else
@@ -25,7 +28,7 @@ public class ToggleObjectsWithF : MonoBehaviour
             FKeyManager.Instance.OnFKeyPressed -= OnFKeyPressed;
     }
 
-    private System.Collections.IEnumerator WaitForFKeyManager()
+    private IEnumerator WaitForFKeyManager()
     {
         while (FKeyManager.Instance == null)
             yield return null;
@@ -33,16 +36,36 @@ public class ToggleObjectsWithF : MonoBehaviour
         FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
     }
 
+    private void Update()
+    {
+        // Force hide objects in Real World
+        if (dimensionSwitcher != null && !dimensionSwitcher.IsInDemonDimension)
+        {
+            foreach (GameObject obj in objectsToToggle)
+            {
+                if (playerInventory != null && obj == playerInventory.GetEquippedItem())
+                    continue;
+
+                obj.SetActive(false);
+            }
+            isVisible = false;
+        }
+    }
+
     private void OnFKeyPressed()
     {
-        isVisible = !isVisible;
-
-        foreach (GameObject obj in objectsToToggle)
+        // Only toggle if in Demon World
+        if (dimensionSwitcher != null && dimensionSwitcher.IsInDemonDimension)
         {
-            if (playerInventory != null && obj == playerInventory.GetEquippedItem())
-                continue;
+            isVisible = !isVisible;
 
-            obj.SetActive(isVisible);
+            foreach (GameObject obj in objectsToToggle)
+            {
+                if (playerInventory != null && obj == playerInventory.GetEquippedItem())
+                    continue;
+
+                obj.SetActive(isVisible);
+            }
         }
     }
 }
