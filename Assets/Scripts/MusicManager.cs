@@ -13,7 +13,6 @@ public class MusicManager : MonoBehaviour
 
     void Start()
     {
-        // Only play the initial music
         realWorldMusic.volume = 1f;
         realWorldMusic.Play();
 
@@ -27,7 +26,7 @@ public class MusicManager : MonoBehaviour
         IsInDemonDimension = true;
 
         if (currentFade != null) StopCoroutine(currentFade);
-        demonMusic.Play(); // Start demon music
+        demonMusic.Play();
         currentFade = StartCoroutine(FadeMusic(realWorldMusic, demonMusic));
     }
 
@@ -37,7 +36,7 @@ public class MusicManager : MonoBehaviour
         IsInDemonDimension = false;
 
         if (currentFade != null) StopCoroutine(currentFade);
-        realWorldMusic.Play(); // Start real world music
+        realWorldMusic.Play();
         currentFade = StartCoroutine(FadeMusic(demonMusic, realWorldMusic));
     }
 
@@ -59,7 +58,7 @@ public class MusicManager : MonoBehaviour
         }
 
         from.volume = 0f;
-        from.Stop(); // Stop faded-out track
+        from.Stop();
         to.volume = 1f;
     }
 }

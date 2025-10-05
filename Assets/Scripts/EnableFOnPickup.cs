@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class EnableFOnPickup : MonoBehaviour
 {
-    public Transform player; // assign your player Transform in Inspector
+    public Transform player;
 
     private void Update()
     {
@@ -11,7 +11,7 @@ public class EnableFOnPickup : MonoBehaviour
             if (player == null) return;
 
             float distance = Vector3.Distance(player.position, transform.position);
-            if (distance <= 3f) // example pickup range
+            if (distance <= 3f)
             {
                 if (FKeyManager.Instance != null)
                     FKeyManager.Instance.EnableFKey();

@@ -4,16 +4,16 @@ using UnityEngine.SceneManagement;
 
 public class LoadMainMenu : MonoBehaviour
 {
-    public CanvasGroup fadePanel;     // Assign your fade panel here
-    public float fadeDuration = 1f;   // How long to fade
-    public AudioSource audioSource;   // Optional: assign if you want audio fade
+    public CanvasGroup fadePanel;
+    public float fadeDuration = 1f;
+    public AudioSource audioSource;
 
     private bool isFading = false;
 
     public void OnMainMenuButtonClick()
     {
         if (!isFading)
-            StartCoroutine(FadeOutAndLoad("MainMenu")); // Change "MainMenu" to your actual scene name
+            StartCoroutine(FadeOutAndLoad("MainMenu"));
     }
 
     private IEnumerator FadeOutAndLoad(string sceneName)

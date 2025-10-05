@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;   // for TextMeshPro
+using TMPro;
 
 public class DialogueManager : MonoBehaviour
 {
-    public TMP_Text dialogueText;       // The text UI for sentences
-    public float typingSpeed = 0.03f;   // Adjustable typing speed
+    public TMP_Text dialogueText;
+    public float typingSpeed = 0.03f;
     private Queue<string> sentences;
 
     void Start()
@@ -33,10 +33,9 @@ public class DialogueManager : MonoBehaviour
         {
             string sentence = sentences.Dequeue();
             yield return StartCoroutine(TypeSentence(sentence));
-            yield return new WaitForSeconds(1f); // pause between sentences
+            yield return new WaitForSeconds(1f);
         }
 
-        // After all sentences are shown, wait 1 sec and clear
         yield return new WaitForSeconds(1f);
         dialogueText.text = "";
     }
@@ -47,7 +46,7 @@ public class DialogueManager : MonoBehaviour
         foreach (char letter in sentence.ToCharArray())
         {
             dialogueText.text += letter;
-            yield return new WaitForSeconds(typingSpeed); // uses adjustable speed
+            yield return new WaitForSeconds(typingSpeed);
         }
     }
 }

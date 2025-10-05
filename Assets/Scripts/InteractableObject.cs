@@ -12,7 +12,6 @@ public class InteractableObject : MonoBehaviour
         PlayerInteraction playerInteraction = other.GetComponent<PlayerInteraction>();
         if (playerInteraction != null)
         {
-            // Enable F key
             FKeyManager fKeyManager = FindObjectOfType<FKeyManager>();
             if (fKeyManager != null)
                 fKeyManager.EnableFKey();

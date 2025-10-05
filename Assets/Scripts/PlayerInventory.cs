@@ -46,7 +46,6 @@ public class PlayerInventory : MonoBehaviour
         {
             GameObject hitItem = hit.collider.gameObject;
 
-            // Ignore the currently equipped item
             if (hitItem == GetEquippedItem())
             {
                 itemInView = null;
@@ -79,7 +78,6 @@ public class PlayerInventory : MonoBehaviour
             {
                 inventorySlots[i] = item;
 
-                // Disable physics only for non-pickaxe items
                 if (!item.CompareTag("Pickaxe"))
                 {
                     if (item.GetComponent<Collider>())
@@ -90,7 +88,6 @@ public class PlayerInventory : MonoBehaviour
                 }
                 else
                 {
-                    // Pickaxe stays kinematic but collider remains active
                     Rigidbody rb = item.GetComponent<Rigidbody>();
                     if (rb != null) rb.isKinematic = true;
                 }
@@ -98,7 +95,6 @@ public class PlayerInventory : MonoBehaviour
                 RotateObject rot = item.GetComponent<RotateObject>();
                 if (rot != null) rot.StopRotation();
 
-                // Move to correct hand position based on type
                 if (item.CompareTag("Torch"))
                 {
                     item.transform.SetParent(torchHandTransform);
@@ -115,7 +111,7 @@ public class PlayerInventory : MonoBehaviour
                 item.transform.localPosition = Vector3.zero;
                 item.transform.localRotation = Quaternion.identity;
 
-                item.SetActive(false); // hide until equipped
+                item.SetActive(false);
 
                 if (pickupMessage != null) pickupMessage.enabled = false;
 

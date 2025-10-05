@@ -10,10 +10,10 @@ public class SettingsMenu : MonoBehaviour
     private bool isOpen = false;
 
     [Header("References")]
-    public PlayerControlling playerController; // Your player script
-    public AudioMixer masterMixer;             // Assign your AudioMixer
-    public Slider sensitivitySlider;           // Slider for mouse sensitivity
-    public Slider volumeSlider;                // Slider for master volume
+    public PlayerControlling playerController;
+    public AudioMixer masterMixer;
+    public Slider sensitivitySlider;
+    public Slider volumeSlider;
 
     [Header("Sensitivity Range")]
     public float minSensitivity = 50f;
@@ -21,17 +21,14 @@ public class SettingsMenu : MonoBehaviour
 
     void Start()
     {
-        // Ensure sliders are initialized safely
         if (playerController != null)
         {
-            playerController.sensitivity = 300f;     // Force default
+            playerController.sensitivity = 300f;
             sensitivitySlider.minValue = minSensitivity;
             sensitivitySlider.maxValue = maxSensitivity;
 
-            // Set slider value to player's current sensitivity
             sensitivitySlider.value = playerController.sensitivity;
 
-            // Add listener via script (avoids Inspector override)
             sensitivitySlider.onValueChanged.RemoveAllListeners();
             sensitivitySlider.onValueChanged.AddListener(SetSensitivity);
         }
@@ -41,7 +38,7 @@ public class SettingsMenu : MonoBehaviour
             float currentVolume;
             if (masterMixer.GetFloat("MasterVolume", out currentVolume))
             {
-                volumeSlider.value = Mathf.Pow(10, currentVolume / 20f); // Convert dB to 0–1
+                volumeSlider.value = Mathf.Pow(10, currentVolume / 20f);
             }
 
             volumeSlider.onValueChanged.RemoveAllListeners();

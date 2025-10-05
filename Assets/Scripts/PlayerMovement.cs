@@ -15,12 +15,12 @@ public class PlayerMovement : MonoBehaviour
     public float mouseSensitivity = 2f;
 
     private Rigidbody rb;
-    private float pitch = 0f; // up/down rotation
+    private float pitch = 0f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true; // stop physics from rotating the player
+        rb.freezeRotation = true;
 
         if (playerCamera == null)
         {
@@ -37,7 +37,6 @@ public class PlayerMovement : MonoBehaviour
     {
         HandleMouseLook();
 
-        // Jumping
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
@@ -54,10 +53,8 @@ public class PlayerMovement : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        // Rotate body left/right
         transform.Rotate(Vector3.up * mouseX);
 
-        // Rotate camera up/down
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -80f, 80f);
         playerCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
@@ -65,12 +62,11 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleMovement()
     {
-        float moveX = Input.GetAxisRaw("Horizontal"); // no smoothing
-        float moveZ = Input.GetAxisRaw("Vertical");   // instant start/stop
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveZ = Input.GetAxisRaw("Vertical");
 
         Vector3 move = (transform.right * moveX + transform.forward * moveZ).normalized;
 
-        // New position = current + move * speed * dt
         Vector3 targetPos = rb.position + move * moveSpeed * Time.fixedDeltaTime;
 
         rb.MovePosition(targetPos);
@@ -78,13 +74,11 @@ public class PlayerMovement : MonoBehaviour
 
     bool IsGrounded()
     {
-        // Simple ground check (raycast down a bit below player center)
         return Physics.Raycast(transform.position, Vector3.down, 1.1f);
     }
 
     public void SetSensitivity(float value)
     {
         mouseSensitivity = value;
-        // If you have a camera look script, apply this sensitivity to it here
     }
 }

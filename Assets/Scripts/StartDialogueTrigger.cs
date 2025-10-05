@@ -8,7 +8,6 @@ public class StartDialogueTrigger : MonoBehaviour
 
     void Start()
     {
-        // Trigger dialogue after 2 seconds from game start
         Invoke("TriggerDialogue", 2f);
     }
 

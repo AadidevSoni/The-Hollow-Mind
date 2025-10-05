@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class DemonHandCollider : MonoBehaviour
 {
-    public PlayerHealth playerHealth; // assign in inspector
+    public PlayerHealth playerHealth;
     public int damage = 25;
     private bool hasDealtDamage = false;
 

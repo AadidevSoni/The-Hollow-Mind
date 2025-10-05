@@ -4,10 +4,10 @@ using System.Collections;
 
 public class DemonSpawnDelayed : MonoBehaviour
 {
-    public GameObject demon;       // Demon GameObject
-    public Transform player;       // Player Transform
-    public Camera playerCamera;    // Main Camera
-    public float spawnDelay = 1f;  // Delay in seconds before spawning
+    public GameObject demon;
+    public Transform player;
+    public Camera playerCamera;
+    public float spawnDelay = 1f;
 
     private void OnEnable()
     {
@@ -24,7 +24,7 @@ public class DemonSpawnDelayed : MonoBehaviour
     private void Start()
     {
         if (demon != null)
-            demon.SetActive(false); // start disabled
+            demon.SetActive(false);
     }
 
     private void HandleFKeyPress()
@@ -33,10 +33,8 @@ public class DemonSpawnDelayed : MonoBehaviour
 
         if (!demon.activeSelf)
         {
-            // Capture the player's current position
             Vector3 playerPositionAtPress = player.position;
 
-            // Start coroutine to spawn demon after delay
             StartCoroutine(SpawnDemonAfterDelay(playerPositionAtPress));
         }
         else
@@ -49,14 +47,12 @@ public class DemonSpawnDelayed : MonoBehaviour
     {
         yield return new WaitForSeconds(spawnDelay);
 
-        // Ensure demon is on NavMesh near the captured position
         if (NavMesh.SamplePosition(spawnPosition, out NavMeshHit hit, 5f, NavMesh.AllAreas))
         {
             demon.transform.position = hit.position;
         }
         else
         {
-            // If NavMesh not found, fallback slightly above the position
             demon.transform.position = spawnPosition + Vector3.up;
         }
 

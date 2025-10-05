@@ -47,7 +47,7 @@ public class DemonAI : MonoBehaviour
     public float teleportOffset = 2f;
 
     [Header("Flashlight")]
-    public Light playerFlashlight; // assign player's spotlight
+    public Light playerFlashlight;
     public float fleeSpeed = 10f;
     public float fleeMargin = 2f;
     public float fleeUpdateInterval = 0.4f;
@@ -90,14 +90,12 @@ public class DemonAI : MonoBehaviour
 
     private void Update()
     {
-        // ---------- Determine fleeing condition ----------
         bool shouldFlee = false;
         if (playerFlashlight != null && player != null)
         {
             bool flashlightOn = playerFlashlight.enabled;
             float distToPlayer = Vector3.Distance(transform.position, player.position);
 
-            // Check cone (only if flashlight is on)
             bool inFlashlightCone = false;
             if (flashlightOn)
             {
@@ -115,14 +113,12 @@ public class DemonAI : MonoBehaviour
                 }
             }
 
-            // Should flee if flashlight is ON and player is within sightRange OR if demon is inside flashlight cone
             shouldFlee = (playerFlashlight.enabled && Vector3.Distance(transform.position, player.position) <= sightRange) || inFlashlightCone;
 
             if (shouldFlee && !isFleeing) StartFlee();
             else if (!shouldFlee && isFleeing) StopFlee();
         }
 
-        // ---------- Handle ongoing fleeing ----------
         if (isFleeing)
         {
             if (Time.time >= nextFleeUpdateTime && player != null)
@@ -132,7 +128,6 @@ public class DemonAI : MonoBehaviour
 
                 Vector3 fleeTarget = transform.position + awayDir * desiredDistance;
 
-                // try to sample the navmesh near that point
                 if (NavMesh.SamplePosition(fleeTarget, out NavMeshHit hit, desiredDistance * 1.2f, NavMesh.AllAreas))
                 {
                     agent.isStopped = false;
@@ -141,7 +136,6 @@ public class DemonAI : MonoBehaviour
                 }
                 else
                 {
-                    // fallback: try a smaller step away or random offset
                     Vector3 fallback = transform.position + awayDir * Mathf.Max(6f, desiredDistance * 0.6f) + Random.insideUnitSphere * 2f;
                     if (NavMesh.SamplePosition(fallback, out NavMeshHit hit2, 6f, NavMesh.AllAreas))
                     {
@@ -155,10 +149,9 @@ public class DemonAI : MonoBehaviour
             }
 
             UpdateAnimatorSpeed(agent.velocity.magnitude);
-            return; // skip normal AI while fleeing
+            return;
         }
 
-        // ---------- Existing AI logic ----------
         agent.speed = moveSpeed;
 
         if (isStunned)
@@ -238,7 +231,6 @@ public class DemonAI : MonoBehaviour
         UpdateAnimatorSpeed(agent.velocity.magnitude);
     }
 
-    // ---------- Flashlight flee methods ----------
     private void StartFlee()
     {
         isFleeing = true;
@@ -246,7 +238,6 @@ public class DemonAI : MonoBehaviour
         agent.isStopped = false;
         nextFleeUpdateTime = 0f;
 
-        // immediate flee target
         if (player != null)
         {
             Vector3 awayDir = (transform.position - player.position).normalized;
@@ -432,15 +423,12 @@ public class DemonAI : MonoBehaviour
         agent.isStopped = true;
         UpdateAnimatorSpeed(0f);
 
-        // Play teleport animation
         if (animator != null)
         {
             animator.SetTrigger("Teleport");
-            // Optional: wait a short delay for visual effect
-            yield return new WaitForSeconds(0.3f); // match animation anticipation
+            yield return new WaitForSeconds(0.3f);
         }
 
-        // Pause before moving
         yield return new WaitForSeconds(teleportPause);
 
         if (player != null)
@@ -459,7 +447,6 @@ public class DemonAI : MonoBehaviour
         isTeleporting = false;
         agent.isStopped = false;
 
-        // Optional: play arrival effect or reset animation
     }
 
     #endregion

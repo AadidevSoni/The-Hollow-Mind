@@ -3,14 +3,14 @@ using System.Collections;
 
 public class FadeScene : MonoBehaviour
 {
-    public CanvasGroup fadePanel;    // Assign your black full-screen panel
-    public float fadeDuration = 1f;  // Duration of fade-in
+    public CanvasGroup fadePanel;
+    public float fadeDuration = 1f;
 
     void Start()
     {
         if (fadePanel != null)
         {
-            fadePanel.alpha = 1f; // Start fully black
+            fadePanel.alpha = 1f;
             StartCoroutine(FadeIn());
         }
     }
@@ -24,6 +24,6 @@ public class FadeScene : MonoBehaviour
             fadePanel.alpha = 1f - (t / fadeDuration);
             yield return null;
         }
-        fadePanel.alpha = 0f; // Fully transparent
+        fadePanel.alpha = 0f;
     }
 }

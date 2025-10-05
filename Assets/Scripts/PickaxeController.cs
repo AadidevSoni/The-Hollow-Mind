@@ -36,7 +36,6 @@ public class PickaxeController : MonoBehaviour
     {
         if (playerInventory == null || playerInventory.GetEquippedItem() != gameObject) return;
 
-        // Idle motion
         if (!isSwinging)
         {
             idleTime += Time.deltaTime * idleSpeed;
@@ -44,7 +43,6 @@ public class PickaxeController : MonoBehaviour
             transform.localRotation = startRotation * Quaternion.Euler(idleRotation, 0f, 0f);
         }
 
-        // Swing attack
         if (!isSwinging && Input.GetMouseButtonDown(0))
         {
             StartCoroutine(SwingAttack());
@@ -55,7 +53,6 @@ public class PickaxeController : MonoBehaviour
     {
         isSwinging = true;
 
-        // Play swing sound
         if (audioSource && swingSound)
             audioSource.PlayOneShot(swingSound);
 
@@ -64,7 +61,6 @@ public class PickaxeController : MonoBehaviour
         Quaternion topRotation = startRotation * Quaternion.Euler(0f, 0f, -swingAngle);
         Quaternion bottomRotation = startRotation;
 
-        // Swing down
         while (elapsed < swingDuration)
         {
             elapsed += Time.deltaTime;
@@ -73,7 +69,6 @@ public class PickaxeController : MonoBehaviour
             yield return null;
         }
 
-        // Swing finished → check for hits here
         Collider[] hits = Physics.OverlapSphere(transform.position, 0.8f, hitLayer);
         bool hitSomething = false;
 
@@ -82,16 +77,14 @@ public class PickaxeController : MonoBehaviour
             CrystalBreak crystal = hit.GetComponent<CrystalBreak>();
             if (crystal != null)
             {
-                crystal.BreakOneCrystal(); // Break one child crystal
+                crystal.BreakOneCrystal();
                 hitSomething = true;
-                break; // Only break one crystal per swing
+                break;
             }
         }
 
-        // Slight delay so crystal disappearance syncs with impact
         yield return new WaitForSeconds(0.05f);
 
-        // Swing back
         elapsed = 0f;
         while (elapsed < swingDuration * 0.5f)
         {
@@ -103,7 +96,6 @@ public class PickaxeController : MonoBehaviour
 
         transform.localRotation = startRotation;
 
-        // Play hit sound if a crystal was hit
         if (hitSomething && audioSource && hitSound)
             audioSource.PlayOneShot(hitSound);
 

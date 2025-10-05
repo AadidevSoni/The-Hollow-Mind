@@ -3,11 +3,11 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class DemonSound : MonoBehaviour
 {
-    public Transform player;               // Assign Player
-    public float detectionRange = 20f;     // Max distance for demon proximity effect
-    public float fadeSpeed = 2f;           // How fast volume adjusts
+    public Transform player;
+    public float detectionRange = 20f;
+    public float fadeSpeed = 2f;
 
-    public MusicManager musicManager;      // Assign MusicManager in Inspector
+    public MusicManager musicManager;
 
     private AudioSource demonAudio;
     private bool wasCompletelySilent = true;
@@ -17,12 +17,11 @@ public class DemonSound : MonoBehaviour
         demonAudio = GetComponent<AudioSource>();
         demonAudio.loop = true;
         demonAudio.volume = 0f;
-        demonAudio.Play(); // Always play, adjust volume dynamically
+        demonAudio.Play();
     }
 
     void OnEnable()
     {
-        // Reset state whenever demon is enabled
         wasCompletelySilent = true;
         if (demonAudio != null)
         {
@@ -37,11 +36,10 @@ public class DemonSound : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        // Demon growl volume based on distance
         float demonTargetVol = 0f;
         if (distance <= detectionRange)
         {
-            float t = 1f - Mathf.Clamp01(distance / detectionRange); // Closer = louder
+            float t = 1f - Mathf.Clamp01(distance / detectionRange);
             demonTargetVol = t;
 
             if (wasCompletelySilent)
@@ -59,7 +57,6 @@ public class DemonSound : MonoBehaviour
             wasCompletelySilent = true;
         }
 
-        // Fade background music
         AudioSource activeMusic = musicManager.IsInDemonDimension ? musicManager.demonMusic : musicManager.realWorldMusic;
         float targetVolume = distance <= detectionRange ? 0f : 1f;
         activeMusic.volume = Mathf.Lerp(activeMusic.volume, targetVolume, Time.deltaTime * fadeSpeed);

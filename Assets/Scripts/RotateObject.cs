@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class RotateObject : MonoBehaviour
 {
-    public float rotationSpeed = 50f; // Degrees per second
-    private bool canRotate = true;    // Stop rotation when pickaxe collected
+    public float rotationSpeed = 50f;
+    private bool canRotate = true;
 
     void Update()
     {
@@ -13,7 +13,6 @@ public class RotateObject : MonoBehaviour
         }
     }
 
-    // Call this when pickaxe is collected
     public void StopRotation()
     {
         canRotate = false;

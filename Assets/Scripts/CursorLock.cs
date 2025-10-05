@@ -3,11 +3,10 @@ using UnityEngine;
 public class CursorLock : MonoBehaviour
 {
     private bool isLocked = true;
-    public bool allowUnlock = true; // allow external control
+    public bool allowUnlock = true;
 
     void Update()
     {
-        // Toggle lock with Escape only if allowed
         if (allowUnlock && Input.GetKeyDown(KeyCode.Escape))
         {
             isLocked = !isLocked;
@@ -25,14 +24,12 @@ public class CursorLock : MonoBehaviour
         }
     }
 
-    // External call to unlock cursor (e.g., after death)
     public void UnlockCursor()
     {
         isLocked = false;
-        allowUnlock = false; // prevent locking again
+        allowUnlock = false;
     }
 
-    // Optional: relock cursor (if needed)
     public void LockCursor()
     {
         isLocked = true;

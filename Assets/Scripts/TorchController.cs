@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class TorchController : MonoBehaviour
 {
-    public Light torchLight;         // Assign the Light component in Inspector
-    public AudioSource clickSource;  // Assign an AudioSource with click sound
+    public Light torchLight;
+    public AudioSource clickSource;
     private bool isOn = false;
 
     void Start()
@@ -11,13 +11,11 @@ public class TorchController : MonoBehaviour
         if (torchLight == null)
             torchLight = GetComponentInChildren<Light>();
 
-        // Start with torch ON by default
         torchLight.enabled = true;
-        isOn = true; // make sure the toggle state matches
+        isOn = true;
     }
 
 
-    // This is now called by the inventory system
     public void ToggleTorch()
     {
         isOn = !isOn;

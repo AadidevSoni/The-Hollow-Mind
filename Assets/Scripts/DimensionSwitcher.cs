@@ -5,8 +5,6 @@ public class DimensionSwitcher : MonoBehaviour
 {
     public MusicManager musicManager;
     private bool inDemon = false;
-
-    // Property to check current dimension
     public bool IsInDemonDimension => inDemon;
 
     private void OnEnable()

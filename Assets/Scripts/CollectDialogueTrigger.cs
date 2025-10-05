@@ -31,7 +31,7 @@ public class CollectDialogueTrigger : MonoBehaviour
         {
             Debug.Log("E pressed, starting dialogue...");
             FindObjectOfType<DialogueManager>().StartDialogue(dialogue);
-            Destroy(gameObject); // remove item after interaction
+            Destroy(gameObject);
         }
     }
 }

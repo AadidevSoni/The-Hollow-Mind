@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Sun_Temple; // <-- Added this to recognize CursorLock
+using Sun_Temple;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -10,13 +10,13 @@ public class PlayerHealth : MonoBehaviour
     private float currentHealth;
 
     [Header("Audio")]
-    public AudioSource audioSource; // assign in inspector
-    public AudioClip hurtClip;      // the yell sound
-    public AudioClip clickClip;     // menu button click sound
+    public AudioSource audioSource;
+    public AudioClip hurtClip;
+    public AudioClip clickClip;
 
     [Header("UI")]
-    public GameObject deathScreen;  // assign your death panel in inspector
-    public Button menuButton;       // assign button in inspector
+    public GameObject deathScreen;
+    public Button menuButton;
 
     private bool isDead = false;
 
@@ -29,11 +29,9 @@ public class PlayerHealth : MonoBehaviour
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
 
-        // Hide death screen at start
         if (deathScreen != null)
             deathScreen.SetActive(false);
 
-        // Assign menu button click
         if (menuButton != null)
             menuButton.onClick.AddListener(OnMenuButtonClicked);
     }
@@ -80,23 +78,19 @@ public class PlayerHealth : MonoBehaviour
     {
         isDead = true;
 
-        // Show death screen
         if (deathScreen != null)
             deathScreen.SetActive(true);
 
-        // Unlock cursor using CursorLock
         CursorLock cursorLock = FindObjectOfType<CursorLock>();
         if (cursorLock != null)
         {
             cursorLock.UnlockCursor();
         }
 
-        // Disable player controls
         var playerControl = GetComponent<PlayerControlling>();
         if (playerControl != null)
             playerControl.enabled = false;
 
-        // Disable character controller to stop movement
         var character = GetComponent<CharacterController>();
         if (character != null)
             character.enabled = false;
@@ -104,14 +98,12 @@ public class PlayerHealth : MonoBehaviour
 
     private void OnMenuButtonClicked()
     {
-        // Play click sound
         if (audioSource != null && clickClip != null)
         {
             audioSource.pitch = 1f;
             audioSource.PlayOneShot(clickClip, 1f);
         }
 
-        // Load menu scene
-        SceneManager.LoadScene("MainMenu"); // ensure scene name matches
+        SceneManager.LoadScene("MainMenu");
     }
 }

@@ -3,12 +3,12 @@ using UnityEngine.UI;
 
 public class VideoFader : MonoBehaviour
 {
-    public CanvasGroup fadePanel;  // Assign black panel
-    public float fadeDuration = 2f; // Seconds
+    public CanvasGroup fadePanel;
+    public float fadeDuration = 2f;
 
     void Start()
     {
-        fadePanel.alpha = 1f; // Fully visible
+        fadePanel.alpha = 1f;
         StartCoroutine(FadeOut());
     }
 
@@ -21,6 +21,6 @@ public class VideoFader : MonoBehaviour
             fadePanel.alpha = 1f - (t / fadeDuration);
             yield return null;
         }
-        fadePanel.alpha = 0f; // fully transparent
+        fadePanel.alpha = 0f;
     }
 }

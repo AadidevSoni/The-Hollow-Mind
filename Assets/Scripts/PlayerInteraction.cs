@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
 {
-    public bool canUseF = false; // F key initially disabled
+    public bool canUseF = false;
 
     void Update()
     {
@@ -14,11 +14,9 @@ public class PlayerInteraction : MonoBehaviour
 
     void Interact()
     {
-        // Your interaction logic here
         Debug.Log("Interacted with object using F key!");
     }
 
-    // Call this when player interacts with a special object to enable F
     public void EnableFKey()
     {
         canUseF = true;

@@ -9,7 +9,8 @@ public class ToggleVisibility : MonoBehaviour
     [Header("Dimension Switcher Reference")]
     public DimensionSwitcher dimensionSwitcher;
 
-    private bool isVisible = true; // Start visible by default
+    private bool isVisible = true;
+    private bool lastDimensionWasDemon = false;
 
     private void OnEnable()
     {
@@ -36,32 +37,35 @@ public class ToggleVisibility : MonoBehaviour
     private void Start()
     {
         if (objectToHide != null)
-            objectToHide.SetActive(isVisible); // visible at start
+            objectToHide.SetActive(isVisible);
     }
 
     private void Update()
     {
-        // Force object visible in Real World
-        if (dimensionSwitcher != null && !dimensionSwitcher.IsInDemonDimension)
+        if (dimensionSwitcher == null || objectToHide == null) return;
+
+        if (!dimensionSwitcher.IsInDemonDimension)
         {
-            if (objectToHide != null && !objectToHide.activeSelf)
+            objectToHide.SetActive(true);
+            lastDimensionWasDemon = false;
+        }
+        else
+        {
+            if (!lastDimensionWasDemon)
             {
-                objectToHide.SetActive(true);
+                isVisible = false;
+                objectToHide.SetActive(isVisible);
+                lastDimensionWasDemon = true;
             }
         }
     }
 
-
     private void OnFKeyPressed()
     {
-        // Only toggle in Demon World
-        if (dimensionSwitcher != null && dimensionSwitcher.IsInDemonDimension)
+        if (dimensionSwitcher != null && dimensionSwitcher.IsInDemonDimension && objectToHide != null)
         {
-            if (objectToHide != null)
-            {
-                isVisible = !isVisible;
-                objectToHide.SetActive(isVisible);
-            }
+            isVisible = !isVisible;
+            objectToHide.SetActive(isVisible);
         }
     }
 }

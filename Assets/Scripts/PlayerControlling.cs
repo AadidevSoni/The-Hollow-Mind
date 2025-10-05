@@ -32,8 +32,6 @@ public class PlayerControlling : MonoBehaviour
     private Camera playerCam;
     private float yaw = 0f;
     private float pitch = 0f;
-
-    // 👇 Added for natural idle bobbing
     private float idleBobSpeed = 1.2f;
     private float idleBobAmount = 0.02f;
     private Vector3 originalCamLocalPos;
@@ -50,7 +48,7 @@ public class PlayerControlling : MonoBehaviour
         currentStamina = maxStamina;
         playerCam.fieldOfView = normalFOV;
 
-        originalCamLocalPos = cam.transform.localPosition; // store start position
+        originalCamLocalPos = cam.transform.localPosition;
 
         if (Application.isEditor)
         {
@@ -78,12 +76,12 @@ public class PlayerControlling : MonoBehaviour
                     isCrouching ? 0.5f : 1f,
                     cam.transform.localPosition.z
             );
-            originalCamLocalPos = cam.transform.localPosition; // reset base for bobbing
+            originalCamLocalPos = cam.transform.localPosition;
         }
 
         HandleFootsteps();
         HandleFOV();
-        HandleIdleBobbing(); // 👈 Added bobbing handler
+        HandleIdleBobbing();
         CameraRotation(cam, rotX, rotY);
     }
 
@@ -181,9 +179,6 @@ public class PlayerControlling : MonoBehaviour
             targetFOV = runFOV;
         playerCam.fieldOfView = Mathf.Lerp(playerCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
     }
-
-    // 👇 Added for natural idle breathing/bobbing
-    // 👇 Natural idle bobbing when standing still
     void HandleIdleBobbing()
     {
         float horizontalSpeed = new Vector3(character.velocity.x, 0, character.velocity.z).magnitude;
@@ -192,14 +187,13 @@ public class PlayerControlling : MonoBehaviour
         {
             idleTimer += Time.deltaTime * idleBobSpeed;
             float newY = originalCamLocalPos.y + Mathf.Sin(idleTimer) * idleBobAmount;
-            float newX = originalCamLocalPos.x + Mathf.Sin(idleTimer * 0.5f) * idleBobAmount * 0.5f; // slight side sway
+            float newX = originalCamLocalPos.x + Mathf.Sin(idleTimer * 0.5f) * idleBobAmount * 0.5f;
             float newZ = originalCamLocalPos.z;
 
             cam.transform.localPosition = new Vector3(newX, newY, newZ);
         }
         else
         {
-            // Smoothly return to original position when moving
             cam.transform.localPosition = Vector3.Lerp(cam.transform.localPosition, originalCamLocalPos, Time.deltaTime * 4f);
             idleTimer = 0f;
         }

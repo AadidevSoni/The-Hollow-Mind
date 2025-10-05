@@ -4,9 +4,9 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public CanvasGroup fadePanel;      // Full-screen black panel with CanvasGroup
-    public float fadeDuration = 1f;    // Duration of fade
-    public AudioSource audioSource;    // Assign the audio source on the canvas
+    public CanvasGroup fadePanel;
+    public float fadeDuration = 1f;
+    public AudioSource audioSource;
 
     private bool isFading = false;
 
@@ -21,11 +21,10 @@ public class MainMenu : MonoBehaviour
         Application.Quit();
     }
 
-    // 👉 Call this if you want to fade out and load the main menu scene
     public void LoadMainMenu()
     {
         if (!isFading)
-            StartCoroutine(FadeOutAudioAndScreen("MainMenu")); // change "MainMenu" to your actual scene name
+            StartCoroutine(FadeOutAudioAndScreen("MainMenu"));
     }
 
     private IEnumerator FadeOutAudioAndScreen(int sceneIndex)

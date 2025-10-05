@@ -38,7 +38,6 @@ public class ToggleObjectsWithF : MonoBehaviour
 
     private void Update()
     {
-        // Force hide objects in Real World
         if (dimensionSwitcher != null && !dimensionSwitcher.IsInDemonDimension)
         {
             foreach (GameObject obj in objectsToToggle)
@@ -54,7 +53,6 @@ public class ToggleObjectsWithF : MonoBehaviour
 
     private void OnFKeyPressed()
     {
-        // Only toggle if in Demon World
         if (dimensionSwitcher != null && dimensionSwitcher.IsInDemonDimension)
         {
             isVisible = !isVisible;
