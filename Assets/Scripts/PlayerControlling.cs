@@ -183,6 +183,7 @@ public class PlayerControlling : MonoBehaviour
     }
 
     // 👇 Added for natural idle breathing/bobbing
+    // 👇 Natural idle bobbing when standing still
     void HandleIdleBobbing()
     {
         float horizontalSpeed = new Vector3(character.velocity.x, 0, character.velocity.z).magnitude;
@@ -191,7 +192,10 @@ public class PlayerControlling : MonoBehaviour
         {
             idleTimer += Time.deltaTime * idleBobSpeed;
             float newY = originalCamLocalPos.y + Mathf.Sin(idleTimer) * idleBobAmount;
-            cam.transform.localPosition = new Vector3(originalCamLocalPos.x, newY, originalCamLocalPos.z);
+            float newX = originalCamLocalPos.x + Mathf.Sin(idleTimer * 0.5f) * idleBobAmount * 0.5f; // slight side sway
+            float newZ = originalCamLocalPos.z;
+
+            cam.transform.localPosition = new Vector3(newX, newY, newZ);
         }
         else
         {
@@ -200,6 +204,7 @@ public class PlayerControlling : MonoBehaviour
             idleTimer = 0f;
         }
     }
+
 
     void CameraRotation(GameObject cam, float rotX, float rotY)
     {

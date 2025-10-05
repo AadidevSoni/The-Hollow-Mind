@@ -1,23 +1,19 @@
 using UnityEngine;
-using System.Collections;
 
 public class ToggleVisibility : MonoBehaviour
 {
-    public GameObject objectToHide;  // Assign the object in Inspector
-    private bool isVisible = true;    // Start visible
+    [Header("Object to Toggle")]
+    public GameObject objectToHide;  // Assign in Inspector
+
+    private bool isVisible = true;
 
     private void OnEnable()
     {
-        // Wait until FKeyManager singleton exists
-        StartCoroutine(WaitForFKeyManager());
-    }
-
-    private IEnumerator WaitForFKeyManager()
-    {
-        while (FKeyManager.Instance == null)
-            yield return null;
-
-        FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+        // Subscribe to F key press event
+        if (FKeyManager.Instance != null)
+            FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+        else
+            StartCoroutine(WaitForFKeyManager());
     }
 
     private void OnDisable()
@@ -26,17 +22,23 @@ public class ToggleVisibility : MonoBehaviour
             FKeyManager.Instance.OnFKeyPressed -= OnFKeyPressed;
     }
 
+    private System.Collections.IEnumerator WaitForFKeyManager()
+    {
+        while (FKeyManager.Instance == null)
+            yield return null;
+
+        FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+    }
+
     private void Start()
     {
-        // Ensure initial state matches isVisible
         if (objectToHide != null)
             objectToHide.SetActive(isVisible);
     }
 
     private void OnFKeyPressed()
     {
-        // Only toggle if F key is enabled and object exists
-        if (FKeyManager.Instance != null && FKeyManager.Instance.IsFKeyEnabled && objectToHide != null)
+        if (objectToHide != null)
         {
             isVisible = !isVisible;
             objectToHide.SetActive(isVisible);

@@ -1,23 +1,22 @@
 using UnityEngine;
-using System.Collections;
 
 public class ToggleObjectsWithF : MonoBehaviour
 {
+    [Header("Objects to Toggle")]
     public GameObject[] objectsToToggle;
-    private bool isVisible = false;
+
+    [Header("Player Inventory (Optional)")]
     public PlayerInventory playerInventory;
+
+    private bool isVisible = false;
 
     private void OnEnable()
     {
-        StartCoroutine(WaitForFKeyManager());
-    }
-
-    private IEnumerator WaitForFKeyManager()
-    {
-        while (FKeyManager.Instance == null)
-            yield return null;
-
-        FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+        // Subscribe to F key press event
+        if (FKeyManager.Instance != null)
+            FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+        else
+            StartCoroutine(WaitForFKeyManager());
     }
 
     private void OnDisable()
@@ -26,19 +25,24 @@ public class ToggleObjectsWithF : MonoBehaviour
             FKeyManager.Instance.OnFKeyPressed -= OnFKeyPressed;
     }
 
+    private System.Collections.IEnumerator WaitForFKeyManager()
+    {
+        while (FKeyManager.Instance == null)
+            yield return null;
+
+        FKeyManager.Instance.OnFKeyPressed += OnFKeyPressed;
+    }
+
     private void OnFKeyPressed()
     {
-        if (FKeyManager.Instance != null && FKeyManager.Instance.IsFKeyEnabled)
+        isVisible = !isVisible;
+
+        foreach (GameObject obj in objectsToToggle)
         {
-            isVisible = !isVisible;
+            if (playerInventory != null && obj == playerInventory.GetEquippedItem())
+                continue;
 
-            foreach (GameObject obj in objectsToToggle)
-            {
-                if (playerInventory != null && obj == playerInventory.GetEquippedItem())
-                    continue;
-
-                obj.SetActive(isVisible);
-            }
+            obj.SetActive(isVisible);
         }
     }
 }
