@@ -16,10 +16,19 @@ public class PlayerInventory : MonoBehaviour
     [Header("Hand/Equip Positions")]
     public Transform torchHandTransform;
     public Transform pickaxeHandTransform;
+    public Transform crystalHandTransform;
 
     [Header("UI")]
     public TextMeshProUGUI pickupMessage;
     private GameObject itemInView;
+
+    [Header("Dialogue References")]
+    public Dialogue torchDialogue;
+
+    [Header("Crystal Replacement")]
+    public GameObject crystalPrefab;
+    private bool crystalEquipped = false;
+    private GameObject currentCrystalInstance;
 
     void Update()
     {
@@ -118,6 +127,15 @@ public class PlayerInventory : MonoBehaviour
                 if (item.CompareTag("Torch"))
                 {
                     ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Talk to the SUN LORD Statue");
+
+                    if (torchDialogue != null)
+                    {
+                        DialogueManager dialogueManager = FindObjectOfType<DialogueManager>();
+                        if (dialogueManager != null)
+                        {
+                            dialogueManager.StartDialogue(torchDialogue);
+                        }
+                    }
                 }
 
                 if (item.CompareTag("Pickaxe"))
@@ -134,27 +152,37 @@ public class PlayerInventory : MonoBehaviour
 
     void SwitchItem(int slotIndex)
     {
-        if (currentSlot >= 0 && inventorySlots[currentSlot] != null)
-            inventorySlots[currentSlot].SetActive(false);
+        if (currentSlot >= 0)
+        {
+            if (currentSlot == 1 && crystalEquipped && currentCrystalInstance != null)
+                currentCrystalInstance.SetActive(false);
+            else if (inventorySlots[currentSlot] != null)
+                inventorySlots[currentSlot].SetActive(false);
+        }
+
+        if (slotIndex == 1 && crystalEquipped && currentCrystalInstance != null)
+        {
+            currentCrystalInstance.SetActive(true);
+            currentSlot = 1;
+            return;
+        }
 
         if (inventorySlots[slotIndex] == null)
         {
             currentSlot = -1;
-            Debug.Log("Slot " + (slotIndex + 1) + " is empty!");
             return;
         }
 
         currentSlot = slotIndex;
         inventorySlots[currentSlot].SetActive(true);
-
-        Debug.Log("Equipped " + inventorySlots[currentSlot].name);
     }
+
 
     void HandleEquippedItemInput()
     {
         if (currentSlot < 0) return;
 
-        GameObject equippedItem = inventorySlots[currentSlot];
+        GameObject equippedItem = (currentSlot == 1 && crystalEquipped) ? crystalPrefab : inventorySlots[currentSlot];
         if (equippedItem == null) return;
 
         TorchController torch = equippedItem.GetComponent<TorchController>();
@@ -167,6 +195,37 @@ public class PlayerInventory : MonoBehaviour
     public GameObject GetEquippedItem()
     {
         if (currentSlot < 0) return null;
-        return inventorySlots[currentSlot];
+        return (currentSlot == 1 && crystalEquipped) ? crystalPrefab : inventorySlots[currentSlot];
     }
+
+    public void EquipCrystal()
+    {
+        if (crystalEquipped || crystalPrefab == null || inventorySlots[1] == null) return;
+
+        inventorySlots[1].SetActive(false);
+
+        currentCrystalInstance = Instantiate(crystalPrefab, crystalHandTransform);
+        currentCrystalInstance.transform.localPosition = Vector3.zero;
+        currentCrystalInstance.transform.localRotation = Quaternion.identity;
+        currentCrystalInstance.SetActive(true);
+
+        crystalEquipped = true;
+        currentSlot = 1;
+
+        ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Place the crystal's heart in HOLY FIRE");
+    }
+
+
+    public void PlaceCrystal()
+    {
+        if (!crystalEquipped) return;
+
+        Destroy(currentCrystalInstance);
+
+        inventorySlots[1].SetActive(true);
+        crystalEquipped = false;
+
+        ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Continue destroying remaining demon crystals");
+    }
+
 }

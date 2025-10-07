@@ -14,6 +14,9 @@ public class ToggleObjectsWithF : MonoBehaviour
 
     private bool isVisible = false;
 
+    // NEW: To ensure the objective is updated only once
+    private bool objectiveSetForCrystal = false;
+
     private void OnEnable()
     {
         if (FKeyManager.Instance != null)
@@ -51,6 +54,32 @@ public class ToggleObjectsWithF : MonoBehaviour
                 obj.SetActive(false);
             }
             isVisible = false;
+        }
+
+        // NEW: Check for any destroyed crystal and set objective once
+        if (!objectiveSetForCrystal && objectsToToggle != null)
+        {
+            foreach (GameObject obj in objectsToToggle)
+            {
+                if (obj == null)
+                {
+                    // Set objective
+                    if (ObjectiveManager.Instance != null)
+                    {
+                        ObjectiveManager.Instance.SetObjective("OBJECTIVE: Place the crystal's heart in HOLY FIRE");
+                        Debug.Log("Objective updated: Place the crystal in HOLY FIRE");
+                    }
+
+                    // Equip crystal
+                    if (playerInventory != null)
+                    {
+                        playerInventory.EquipCrystal(); // <-- Call it here
+                    }
+
+                    objectiveSetForCrystal = true; // ensure this runs only once
+                    break; // no need to check further
+                }
+            }
         }
     }
 
