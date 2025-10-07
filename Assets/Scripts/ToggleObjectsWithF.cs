@@ -42,6 +42,9 @@ public class ToggleObjectsWithF : MonoBehaviour
         {
             foreach (GameObject obj in objectsToToggle)
             {
+                if (obj == null)
+                    continue;
+
                 if (playerInventory != null && obj == playerInventory.GetEquippedItem())
                     continue;
 
@@ -59,6 +62,9 @@ public class ToggleObjectsWithF : MonoBehaviour
 
             foreach (GameObject obj in objectsToToggle)
             {
+                if (obj == null)
+                    continue;
+
                 if (playerInventory != null && obj == playerInventory.GetEquippedItem())
                     continue;
 

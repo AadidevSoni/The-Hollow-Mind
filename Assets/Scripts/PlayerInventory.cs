@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using Sun_Temple;
 
-
 public class PlayerInventory : MonoBehaviour
 {
     [Header("Inventory Slots")]
@@ -69,7 +68,6 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-
     void TryPickupItem(GameObject item)
     {
         for (int i = 0; i < inventorySlots.Length; i++)
@@ -116,6 +114,17 @@ public class PlayerInventory : MonoBehaviour
                 if (pickupMessage != null) pickupMessage.enabled = false;
 
                 Debug.Log(item.name + " picked up into slot " + (i + 1));
+
+                if (item.CompareTag("Torch"))
+                {
+                    ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Talk to the SUN LORD Statue");
+                }
+
+                if (item.CompareTag("Pickaxe"))
+                {
+                    ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Destroy all 7 demon crystals");
+                }
+
                 return;
             }
         }
