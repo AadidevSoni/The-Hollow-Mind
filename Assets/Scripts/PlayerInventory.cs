@@ -12,6 +12,7 @@ public class PlayerInventory : MonoBehaviour
     [Header("Pickup Settings")]
     public float pickupRange = 3f;
     public LayerMask pickupLayer;
+    public LayerMask placementLayer;
 
     [Header("Hand/Equip Positions")]
     public Transform torchHandTransform;
@@ -34,9 +35,12 @@ public class PlayerInventory : MonoBehaviour
     {
         CheckForPickupItem();
 
-        if (Input.GetKeyDown(KeyCode.E) && itemInView != null)
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            TryPickupItem(itemInView);
+            if (itemInView != null)
+                TryPickupItem(itemInView);
+            else if (crystalEquipped)
+                PlaceCrystalAtTarget();
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchItem(0);
@@ -53,27 +57,27 @@ public class PlayerInventory : MonoBehaviour
         if (Physics.Raycast(ray, out hit, pickupRange, pickupLayer))
         {
             GameObject hitItem = hit.collider.gameObject;
-
-            if (hitItem == GetEquippedItem())
-            {
-                itemInView = null;
-                if (pickupMessage != null)
-                    pickupMessage.enabled = false;
-                return;
-            }
-
             itemInView = hitItem;
+
             if (pickupMessage != null)
             {
                 pickupMessage.text = "Press E to equip " + itemInView.name;
                 pickupMessage.enabled = true;
             }
         }
-        else
+        else if (Physics.Raycast(ray, out hit, pickupRange, placementLayer) && crystalEquipped)
         {
             itemInView = null;
             if (pickupMessage != null)
-                pickupMessage.enabled = false;
+            {
+                pickupMessage.text = "Press E to place crystal";
+                pickupMessage.enabled = true;
+            }
+        }
+        else
+        {
+            itemInView = null;
+            if (pickupMessage != null) pickupMessage.enabled = false;
         }
     }
 
@@ -85,35 +89,15 @@ public class PlayerInventory : MonoBehaviour
             {
                 inventorySlots[i] = item;
 
-                if (!item.CompareTag("Pickaxe"))
-                {
-                    if (item.GetComponent<Collider>())
-                        item.GetComponent<Collider>().enabled = false;
-
-                    if (item.GetComponent<Rigidbody>())
-                        item.GetComponent<Rigidbody>().isKinematic = true;
-                }
-                else
-                {
-                    Rigidbody rb = item.GetComponent<Rigidbody>();
-                    if (rb != null) rb.isKinematic = true;
-                }
+                if (item.GetComponent<Collider>()) item.GetComponent<Collider>().enabled = false;
+                if (item.GetComponent<Rigidbody>()) item.GetComponent<Rigidbody>().isKinematic = true;
 
                 RotateObject rot = item.GetComponent<RotateObject>();
                 if (rot != null) rot.StopRotation();
 
-                if (item.CompareTag("Torch"))
-                {
-                    item.transform.SetParent(torchHandTransform);
-                }
-                else if (item.CompareTag("Pickaxe"))
-                {
-                    item.transform.SetParent(pickaxeHandTransform);
-                }
-                else
-                {
-                    item.transform.SetParent(torchHandTransform);
-                }
+                if (item.CompareTag("Torch")) item.transform.SetParent(torchHandTransform);
+                else if (item.CompareTag("Pickaxe")) item.transform.SetParent(pickaxeHandTransform);
+                else item.transform.SetParent(torchHandTransform);
 
                 item.transform.localPosition = Vector3.zero;
                 item.transform.localRotation = Quaternion.identity;
@@ -127,14 +111,10 @@ public class PlayerInventory : MonoBehaviour
                 if (item.CompareTag("Torch"))
                 {
                     ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Talk to the SUN LORD Statue");
-
                     if (torchDialogue != null)
                     {
                         DialogueManager dialogueManager = FindObjectOfType<DialogueManager>();
-                        if (dialogueManager != null)
-                        {
-                            dialogueManager.StartDialogue(torchDialogue);
-                        }
+                        dialogueManager?.StartDialogue(torchDialogue);
                     }
                 }
 
@@ -154,35 +134,40 @@ public class PlayerInventory : MonoBehaviour
     {
         if (currentSlot >= 0)
         {
-            if (currentSlot == 1 && crystalEquipped && currentCrystalInstance != null)
-                currentCrystalInstance.SetActive(false);
-            else if (inventorySlots[currentSlot] != null)
-                inventorySlots[currentSlot].SetActive(false);
-        }
-
-        if (slotIndex == 1 && crystalEquipped && currentCrystalInstance != null)
-        {
-            currentCrystalInstance.SetActive(true);
-            currentSlot = 1;
-            return;
-        }
-
-        if (inventorySlots[slotIndex] == null)
-        {
-            currentSlot = -1;
-            return;
+            GameObject currentItem = (currentSlot == 1 && crystalEquipped) ? currentCrystalInstance : inventorySlots[currentSlot];
+            if (currentItem != null) currentItem.SetActive(false);
         }
 
         currentSlot = slotIndex;
-        inventorySlots[currentSlot].SetActive(true);
-    }
 
+        GameObject itemToEquip = null;
+
+        if (currentSlot == 1)
+        {
+            if (crystalEquipped && currentCrystalInstance != null)
+                itemToEquip = currentCrystalInstance;
+            else if (inventorySlots[1] != null)
+            {
+                itemToEquip = inventorySlots[1];
+                itemToEquip.transform.SetParent(pickaxeHandTransform);
+                itemToEquip.transform.localPosition = Vector3.zero;
+                itemToEquip.transform.localRotation = Quaternion.identity;
+            }
+        }
+        else if (inventorySlots[currentSlot] != null)
+        {
+            itemToEquip = inventorySlots[currentSlot];
+        }
+
+        if (itemToEquip != null)
+            itemToEquip.SetActive(true);
+    }
 
     void HandleEquippedItemInput()
     {
         if (currentSlot < 0) return;
 
-        GameObject equippedItem = (currentSlot == 1 && crystalEquipped) ? crystalPrefab : inventorySlots[currentSlot];
+        GameObject equippedItem = (currentSlot == 1 && crystalEquipped) ? currentCrystalInstance : inventorySlots[currentSlot];
         if (equippedItem == null) return;
 
         TorchController torch = equippedItem.GetComponent<TorchController>();
@@ -195,14 +180,20 @@ public class PlayerInventory : MonoBehaviour
     public GameObject GetEquippedItem()
     {
         if (currentSlot < 0) return null;
-        return (currentSlot == 1 && crystalEquipped) ? crystalPrefab : inventorySlots[currentSlot];
+        if (currentSlot == 1)
+        {
+            return crystalEquipped ? currentCrystalInstance : inventorySlots[1];
+        }
+        return inventorySlots[currentSlot];
     }
 
     public void EquipCrystal()
     {
         if (crystalEquipped || crystalPrefab == null || inventorySlots[1] == null) return;
 
-        inventorySlots[1].SetActive(false);
+        var renderers = inventorySlots[1].GetComponentsInChildren<Renderer>(true);
+        foreach (var r in renderers)
+            r.enabled = false;
 
         currentCrystalInstance = Instantiate(crystalPrefab, crystalHandTransform);
         currentCrystalInstance.transform.localPosition = Vector3.zero;
@@ -215,17 +206,32 @@ public class PlayerInventory : MonoBehaviour
         ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Place the crystal's heart in HOLY FIRE");
     }
 
-
-    public void PlaceCrystal()
+    private void PlaceCrystalAtTarget()
     {
-        if (!crystalEquipped) return;
+        Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+        RaycastHit hit;
 
-        Destroy(currentCrystalInstance);
+        if (Physics.Raycast(ray, out hit, pickupRange, placementLayer))
+        {
+            CrystalPlacement placement = hit.collider.GetComponent<CrystalPlacement>();
+            if (placement != null)
+            {
+                bool placed = placement.PlaceCrystal(currentCrystalInstance);
+                if (placed)
+                {
+                    crystalEquipped = false;
+                    currentCrystalInstance = null;
 
-        inventorySlots[1].SetActive(true);
-        crystalEquipped = false;
+                    if (inventorySlots[1] != null)
+                    {
+                        var renderers = inventorySlots[1].GetComponentsInChildren<Renderer>(true);
+                        foreach (var r in renderers)
+                            r.enabled = true;
+                    }
 
-        ObjectiveManager.Instance?.SetObjective("OBJECTIVE: Continue destroying remaining demon crystals");
+                    currentSlot = 1;
+                }
+            }
+        }
     }
-
 }
