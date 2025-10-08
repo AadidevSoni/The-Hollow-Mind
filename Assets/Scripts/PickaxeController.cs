@@ -20,8 +20,9 @@ public class PickaxeController : MonoBehaviour
     public LayerMask hitLayer;
 
     private Quaternion startRotation;
-    private bool isSwinging = false;
     private float idleTime = 0f;
+
+    [HideInInspector] public bool IsSwinging { get; private set; } = false;
 
     private PlayerInventory playerInventory;
 
@@ -36,22 +37,20 @@ public class PickaxeController : MonoBehaviour
     {
         if (playerInventory == null || playerInventory.GetEquippedItem() != gameObject) return;
 
-        if (!isSwinging)
+        if (!IsSwinging)
         {
             idleTime += Time.deltaTime * idleSpeed;
             float idleRotation = Mathf.Sin(idleTime) * idleAmplitude;
             transform.localRotation = startRotation * Quaternion.Euler(idleRotation, 0f, 0f);
         }
 
-        if (!isSwinging && Input.GetMouseButtonDown(0))
-        {
-            StartCoroutine(SwingAttack());
-        }
     }
 
-    IEnumerator SwingAttack()
+    public IEnumerator SwingAttack()
     {
-        isSwinging = true;
+        if (IsSwinging) yield break;
+
+        IsSwinging = true;
 
         if (audioSource && swingSound)
             audioSource.PlayOneShot(swingSound);
@@ -71,7 +70,6 @@ public class PickaxeController : MonoBehaviour
 
         Collider[] hits = Physics.OverlapSphere(transform.position, 0.8f, hitLayer);
         bool hitSomething = false;
-
         foreach (var hit in hits)
         {
             CrystalBreak crystal = hit.GetComponent<CrystalBreak>();
@@ -99,6 +97,16 @@ public class PickaxeController : MonoBehaviour
         if (hitSomething && audioSource && hitSound)
             audioSource.PlayOneShot(hitSound);
 
-        isSwinging = false;
+        IsSwinging = false;
     }
+
+    public void OnEquip()
+    {
+        if (IsSwinging) return;
+
+        transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+        startRotation = transform.localRotation;
+        idleTime = 0f;
+    }
+
 }
