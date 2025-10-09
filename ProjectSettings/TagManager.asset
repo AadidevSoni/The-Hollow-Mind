@@ -10,7 +10,7 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Ladder
   - Water
   - UI
   - PostProcessing
@@ -19,7 +19,7 @@ TagManager:
   - Light
   - Interact
   - Placement
-  - 
+  - Interactable
   - 
   - 
   - 
