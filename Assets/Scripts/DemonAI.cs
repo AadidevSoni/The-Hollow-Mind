@@ -90,7 +90,6 @@ public class DemonAI : MonoBehaviour
 
     private void Update()
     {
-        // No longer increasing sightRange or autoSenseRadius here
 
         bool shouldFlee = false;
         if (playerFlashlight != null && player != null)

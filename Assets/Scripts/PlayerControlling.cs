@@ -89,7 +89,7 @@ public class PlayerControlling : MonoBehaviour
     {
         float currentSpeed = speed;
 
-        bool wantsToRun = Input.GetKey(KeyCode.LeftShift) && moveFB > 0.1f && !isCrouching;
+        bool wantsToRun = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.R) && moveFB > 0.1f && !isCrouching;
 
         if (wantsToRun && currentStamina > 0)
         {

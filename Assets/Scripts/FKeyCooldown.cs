@@ -50,7 +50,6 @@ public class FKeyCooldown : MonoBehaviour
 
     private void Update()
     {
-        // Countdown the timer
         if (timer > 0f)
         {
             timer -= Time.deltaTime;
@@ -66,7 +65,7 @@ public class FKeyCooldown : MonoBehaviour
             }
         }
 
-        if (demonAI != null && objectToCheck != null && !objectToCheck.activeSelf && timer <= 0f)
+        if (demonAI != null && objectToCheck != null && !objectToCheck.activeSelf)
         {
             demonAI.sightRange += sightIncreasePerSecond * Time.deltaTime;
             demonAI.autoSenseRadius += autoSenseIncreasePerSecond * Time.deltaTime;
