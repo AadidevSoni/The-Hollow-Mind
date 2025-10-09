@@ -7,6 +7,8 @@ public class DialogueManager : MonoBehaviour
 {
     public TMP_Text dialogueText;
     public float typingSpeed = 0.03f;
+    public AudioSource typingAudio;
+
     private Queue<string> sentences;
 
     void Start()
@@ -32,7 +34,13 @@ public class DialogueManager : MonoBehaviour
         while (sentences.Count > 0)
         {
             string sentence = sentences.Dequeue();
+
+            if (typingAudio != null) typingAudio.Play();
+
             yield return StartCoroutine(TypeSentence(sentence));
+
+            if (typingAudio != null) typingAudio.Stop();
+
             yield return new WaitForSeconds(1f);
         }
 
